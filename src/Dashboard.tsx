@@ -1,4 +1,5 @@
 import React from 'react';
+import { HashRouter, Link, Route, Switch } from 'react-router-dom';
 import { createStyles, Theme, makeStyles } from '@material-ui/core/styles';
 import Drawer from '@material-ui/core/Drawer';
 import AppBar from '@material-ui/core/AppBar';
@@ -14,6 +15,8 @@ import MailIcon from '@material-ui/icons/Mail';
 
 const drawerWidth = 240;
 import { Characters } from './Characters';
+import { Intro } from './Intro';
+import { AddCharacter } from './AddCharacter';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -90,16 +93,34 @@ export const Dashboard = (props: any) => {
             </ListItem>
           </List>
 
+          <List>
+            <ListItem button>
+              <ListItemIcon>
+                <InboxIcon />
+              </ListItemIcon>
+              <ListItemText>Watchlist</ListItemText>
+            </ListItem>
+          </List>
+
+          <List>
+            <ListItem button>
+              <ListItemIcon>
+                <InboxIcon />
+              </ListItemIcon>
+              <ListItemText>Trading Config</ListItemText>
+            </ListItem>
+          </List>
+
           <Divider />
           <Characters />
         </div>
       </Drawer>
       <main className={classes.content}>
         <Toolbar />
-        <Typography paragraph>faucibus et molestie ac.</Typography>
-        <Typography paragraph>
-          Consequat mauris nunc congue nisi vitae suscipit. Fringilla est
-        </Typography>
+        <Switch>
+          <Route path="/callback" component={AddCharacter} />
+          <Route component={Intro} />
+        </Switch>
       </main>
     </div>
   );

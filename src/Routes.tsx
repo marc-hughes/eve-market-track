@@ -7,9 +7,7 @@ export const Routes = () => (
   <React.Fragment>
     <CssBaseline />
     <HashRouter>
-      <Switch>
-        <Route component={Dashboard} />
-      </Switch>
+      <Dashboard />
     </HashRouter>
   </React.Fragment>
 );
