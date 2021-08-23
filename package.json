@@ -78,6 +78,7 @@
     "@vercel/webpack-asset-relocator-loader": "^1.6.0",
     "css-loader": "^6.2.0",
     "electron": "13.2.1",
+    "electron-devtools-installer": "^3.2.0",
     "eslint": "^7.32.0",
     "eslint-plugin-import": "^2.24.1",
     "fork-ts-checker-webpack-plugin": "^6.3.2",
@@ -90,6 +91,7 @@
   "dependencies": {
     "@material-ui/core": "^4.12.3",
     "@material-ui/icons": "^4.11.2",
+    "@rehooks/local-storage": "^2.4.1",
     "axios": "^0.21.1",
     "dexie": "^3.2.0-beta.3",
     "dexie-react-hooks": "^1.0.7",
@@ -98,6 +100,7 @@
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-router": "^5.2.0",
-    "react-router-dom": "^5.2.0"
+    "react-router-dom": "^5.2.0",
+    "swr": "^0.5.6"
   }
 }

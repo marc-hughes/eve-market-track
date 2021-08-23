@@ -1,5 +1,12 @@
 import React from 'react';
-import { HashRouter, Link, Route, Switch } from 'react-router-dom';
+import {
+  Link,
+  Route,
+  Switch,
+  useHistory,
+  useLocation,
+  useRouteMatch
+} from 'react-router-dom';
 import { createStyles, Theme, makeStyles } from '@material-ui/core/styles';
 import Drawer from '@material-ui/core/Drawer';
 import AppBar from '@material-ui/core/AppBar';
@@ -17,6 +24,7 @@ import { Characters } from '../character/Characters';
 import { Intro } from '../Intro';
 import { AddCharacter } from '../character/AddCharacter';
 import { Character } from '../character/Character';
+import { TradeConfig } from '../config/TradeConfig';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -45,8 +53,14 @@ const useStyles = makeStyles((theme: Theme) =>
 
 export const Dashboard = (props: any) => {
   const classes = useStyles();
+  const location = useLocation();
 
-  console.info(props);
+  const history = useHistory();
+
+  const goToRoute = (path: string) => () => {
+    console.info('Going to', path);
+    history.push(path);
+  };
 
   return (
     <div className={classes.root}>
@@ -94,7 +108,11 @@ export const Dashboard = (props: any) => {
           </List>
 
           <List>
-            <ListItem button>
+            <ListItem
+              button
+              selected={location.pathname === '/watchlist'}
+              onClick={goToRoute('/watchlist')}
+            >
               <ListItemIcon>
                 <InboxIcon />
               </ListItemIcon>
@@ -103,7 +121,11 @@ export const Dashboard = (props: any) => {
           </List>
 
           <List>
-            <ListItem button>
+            <ListItem
+              button
+              selected={location.pathname === '/config'}
+              onClick={goToRoute('/config')}
+            >
               <ListItemIcon>
                 <InboxIcon />
               </ListItemIcon>
@@ -118,6 +140,7 @@ export const Dashboard = (props: any) => {
       <main className={classes.content}>
         <Toolbar />
         <Switch>
+          <Route path="/config" component={TradeConfig} />
           <Route path="/callback" component={AddCharacter} />
           <Route path="/character/:characterId" component={Character} />
           <Route component={Intro} />
