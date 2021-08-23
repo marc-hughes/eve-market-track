@@ -23,7 +23,11 @@ const invTypes = JSON.parse(invTypeData)
             packagedVolume: packagedVolume === 0 ? t.volume : packagedVolume,
             ...rest
         }
-    })
+    }).reduce((acc, curr) => {
+        acc[curr.typeID] = curr;
+        delete curr.typeID;
+        return acc;
+    }, {});
 
 
 fs.writeFileSync('src/static/invTypesMinimal.json', JSON.stringify(invTypes, null, 1))

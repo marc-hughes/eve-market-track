@@ -2,10 +2,11 @@ import { CircularProgress } from '@material-ui/core';
 import React, { ReactElement } from 'react';
 import axios from 'axios';
 import { useEffect } from 'react';
-import { AuthTokenInfo, esiRequest } from './esi';
+import { AuthTokenInfo, esiRequest } from '../esi';
 import { CharacterName } from './CharacterName';
 import { CharacterInfo } from './character-service';
-import { db } from './db';
+import { db } from '../data/db';
+import { Redirect } from 'react-router';
 
 const retrieveCharacterInfo = (
   accessToken: AuthTokenInfo
@@ -67,7 +68,7 @@ export const AddCharacter = (): ReactElement => {
         setCharacter({ name: result.characterName, id: result.characterID });
         db.characters.add({
           name: result.characterName,
-          id: result.characterID,
+          id: String(result.characterID),
           wallet: 0,
           accessToken: result.accessToken,
           refreshToken: result.refreshToken,
@@ -86,7 +87,7 @@ export const AddCharacter = (): ReactElement => {
     <div>
       Loading Character details...
       <CircularProgress />
-      {character && <CharacterName {...character} />}
+      {character && <Redirect to={`/character/${character.id}`} />}
     </div>
   );
 };

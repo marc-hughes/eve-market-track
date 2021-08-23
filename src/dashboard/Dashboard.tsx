@@ -11,12 +11,12 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 import InboxIcon from '@material-ui/icons/MoveToInbox';
-import MailIcon from '@material-ui/icons/Mail';
 
 const drawerWidth = 240;
-import { Characters } from './Characters';
-import { Intro } from './Intro';
-import { AddCharacter } from './AddCharacter';
+import { Characters } from '../character/Characters';
+import { Intro } from '../Intro';
+import { AddCharacter } from '../character/AddCharacter';
+import { Character } from '../character/Character';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -119,6 +119,7 @@ export const Dashboard = (props: any) => {
         <Toolbar />
         <Switch>
           <Route path="/callback" component={AddCharacter} />
+          <Route path="/character/:characterId" component={Character} />
           <Route component={Intro} />
         </Switch>
       </main>

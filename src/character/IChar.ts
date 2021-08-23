@@ -1,5 +1,5 @@
 export interface IChar {
-  id: number;
+  id: string;
   name: string;
   wallet: number;
   accessToken: string;

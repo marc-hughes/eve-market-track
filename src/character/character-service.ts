@@ -1,4 +1,4 @@
-import { AuthTokenInfo } from './esi';
+import { AuthTokenInfo } from '../esi';
 
 export interface CharacterInfo {
   characterID: number;

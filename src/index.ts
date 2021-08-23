@@ -22,7 +22,7 @@ const createWindow = (): void => {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          "default-src 'unsafe-eval' 'unsafe-inline' 'self' data: https://login.eveonline.com https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com https://web-cdn.eveonline.com https://image.eveonline.com"
+          "default-src 'unsafe-eval' 'unsafe-inline' 'self' data: https://login.eveonline.com https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com https://web-cdn.eveonline.com https://image.eveonline.com https://images.evetech.net"
         ]
       }
     });
@@ -30,6 +30,7 @@ const createWindow = (): void => {
 
   // Create the browser window.
   const mainWindow = new BrowserWindow();
+  mainWindow.maximize();
 
   protocol.registerFileProtocol('eveauth-local', (request, callback) => {
     const authData = request.url.substr(26);

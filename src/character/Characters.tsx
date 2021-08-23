@@ -9,9 +9,9 @@ import React from 'react';
 import WarningIcon from '@material-ui/icons/Warning';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { IChar } from './IChar';
-import { db } from './db';
+import { db } from '../data/db';
 import { CharacterName } from './CharacterName';
-import { LocalDining } from '@material-ui/icons';
+import { useHistory } from 'react-router-dom';
 
 const redirectAuth = () => {
   const clientId = '6d9027a5346d42e1babfda3a8b34a1f1';
@@ -27,6 +27,8 @@ const redirectAuth = () => {
 };
 
 export const Characters: React.FC = () => {
+  const history = useHistory();
+
   const characters: IChar[] = useLiveQuery(() => db.characters.toArray());
 
   if (!characters) {
@@ -43,7 +45,11 @@ export const Characters: React.FC = () => {
         </ListItem>
       )}
       {characters.map((char: IChar, index) => (
-        <ListItem button>
+        <ListItem
+          button
+          key={index}
+          onClick={() => history.push(`/character/${char.id}`)}
+        >
           <CharacterName name={char.name} id={char.id} />
         </ListItem>
       ))}

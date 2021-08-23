@@ -13,13 +13,13 @@ import { red } from '@material-ui/core/colors';
 
 interface CharacterNameProps {
   name: string;
-  id: number;
+  id: number | string;
 }
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
-      maxWidth: 345
+      flexGrow: 1
     },
     media: {
       height: 0,
@@ -57,13 +57,8 @@ export const CharacterName = ({
             src={`https://image.eveonline.com/Character/${id}_64.jpg`}
           />
         }
-        action={
-          <IconButton aria-label="settings">
-            <MoreVertIcon />
-          </IconButton>
-        }
         title={name}
-        subheader="0isk"
+        //        subheader="0isk"
       />
     </Card>
   );
