@@ -1,12 +1,14 @@
-import Dexie from 'dexie';
+import Dexie, { DexieStacks } from 'dexie';
 import { ITradeRoute } from '../config/ITradeRoute';
 import { IChar } from '../character/IChar';
 import { IStation } from '../config/IStation';
+import { IWalletEntry } from '../character/IWalletEntry';
 
 class AppDB extends Dexie {
   characters: Dexie.Table<IChar, string>;
   tradeRoute: Dexie.Table<ITradeRoute, number>;
   stations: Dexie.Table<IStation, string>;
+  walletTransactions: Dexie.Table<IWalletEntry, number>;
 
   constructor() {
     super('eve-market');
@@ -19,6 +21,14 @@ class AppDB extends Dexie {
       characters: 'id,name,wallet,accessToken,refreshToken,expires',
       tradeRoute: 'id++,fromStation,toStation,shippingCost,tax,broker',
       stations: 'id, name'
+    });
+
+    this.version(3).stores({
+      characters: 'id,name,wallet,accessToken,refreshToken,expires',
+      tradeRoute: 'id++,fromStation,toStation,shippingCost,tax,broker',
+      stations: 'id, name',
+      walletTransactions:
+        'transactionId,characterId,clientId,date,isBuy,isPersonal,journalRefId,locationId,quantity,typeId,unitPrice'
     });
 
     // The following line is needed if your typescript

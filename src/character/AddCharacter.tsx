@@ -1,27 +1,18 @@
+import React, { useEffect, ReactElement } from 'react';
 import { CircularProgress } from '@material-ui/core';
-import React, { ReactElement } from 'react';
 import axios from 'axios';
-import { useEffect } from 'react';
-import { AuthTokenInfo, esiRequest } from '../esi';
-import { CharacterName } from './CharacterName';
+import { AuthTokenInfo, esiLoginVerify } from '../esi';
 import { CharacterInfo } from './character-service';
 import { db } from '../data/db';
 import { Redirect } from 'react-router';
+import { refreshWallet } from './wallet-service';
 
 const retrieveCharacterInfo = (
   accessToken: AuthTokenInfo
 ): Promise<CharacterInfo & AuthTokenInfo> => {
-  return esiRequest(accessToken, '/oauth/verify', {}).then((response) => {
-    const {
-      CharacterID: characterID,
-      CharacterName: characterName
-      //CharacterOwnerHash: characterOwnerHash,
-      //ExpiresOn: expiresOn,
-      //IntellectualProperty: intellectualProperty,
-      //Scopes: scopes,
-      //TokenType: tokenType
-    } = response.data;
-    console.info(characterName, characterID);
+  return esiLoginVerify(accessToken, {}).then((response) => {
+    const { CharacterID: characterID, CharacterName: characterName } =
+      response.data;
     return {
       ...accessToken,
       characterID,
@@ -66,17 +57,25 @@ export const AddCharacter = (): ReactElement => {
       .then(retrieveCharacterInfo)
       .then((result) => {
         setCharacter({ name: result.characterName, id: result.characterID });
-        db.characters.add({
+        const char = {
           name: result.characterName,
           id: String(result.characterID),
           wallet: 0,
           accessToken: result.accessToken,
           refreshToken: result.refreshToken,
           expires: Math.round(new Date().getTime() / 1000) + result.expiresIn
-        });
-        return result;
+        };
+
+        db.characters
+          .delete(String(result.characterID))
+          .catch(() => true) // just ignore deletion errors for now
+          .then(() => {
+            db.characters.add(char);
+          });
+        return char;
       })
-      .catch((e) => setError('Could not get auth token'));
+      .then(refreshWallet)
+      .catch(() => setError('Could not get auth token'));
   }, [code]);
 
   if (error) {

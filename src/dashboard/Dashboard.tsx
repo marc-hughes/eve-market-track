@@ -25,11 +25,16 @@ import { Intro } from '../Intro';
 import { AddCharacter } from '../character/AddCharacter';
 import { Character } from '../character/Character';
 import { TradeConfig } from '../config/TradeConfig';
+import { AuthContext } from '../auth';
+import { db } from '../data/db';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { AuthTokenInfo } from '../esi';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
-      display: 'flex'
+      display: 'flex',
+      height: '100%'
     },
     appBar: {
       zIndex: theme.zIndex.drawer + 1
@@ -45,6 +50,7 @@ const useStyles = makeStyles((theme: Theme) =>
       overflow: 'auto'
     },
     content: {
+      height: '100%',
       flexGrow: 1,
       padding: theme.spacing(3)
     }
@@ -52,10 +58,18 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 export const Dashboard = (props: any) => {
+  const firstCharacter = useLiveQuery(() => db.characters.limit(1).first());
   const classes = useStyles();
   const location = useLocation();
-
   const history = useHistory();
+
+  const auth: AuthTokenInfo = firstCharacter
+    ? {
+        accessToken: firstCharacter.accessToken,
+        refreshToken: firstCharacter.refreshToken,
+        expiresIn: firstCharacter.expires
+      }
+    : null;
 
   const goToRoute = (path: string) => () => {
     console.info('Going to', path);
@@ -63,89 +77,91 @@ export const Dashboard = (props: any) => {
   };
 
   return (
-    <div className={classes.root}>
-      <AppBar position="fixed" className={classes.appBar}>
-        <Toolbar>
-          <Typography variant="h6" noWrap>
-            Market Tracker
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <Drawer
-        className={classes.drawer}
-        variant="permanent"
-        classes={{
-          paper: classes.drawerPaper
-        }}
-      >
-        <Toolbar />
-        <div className={classes.drawerContainer}>
-          <List>
-            <ListItem button>
-              <ListItemIcon>
-                <InboxIcon />
-              </ListItemIcon>
-              <ListItemText>Importing</ListItemText>
-            </ListItem>
-          </List>
+    <AuthContext.Provider value={auth}>
+      <div className={classes.root}>
+        <AppBar position="fixed" className={classes.appBar}>
+          <Toolbar>
+            <Typography variant="h6" noWrap>
+              Market Tracker
+            </Typography>
+          </Toolbar>
+        </AppBar>
+        <Drawer
+          className={classes.drawer}
+          variant="permanent"
+          classes={{
+            paper: classes.drawerPaper
+          }}
+        >
+          <Toolbar />
+          <div className={classes.drawerContainer}>
+            <List>
+              <ListItem button>
+                <ListItemIcon>
+                  <InboxIcon />
+                </ListItemIcon>
+                <ListItemText>Importing</ListItemText>
+              </ListItem>
+            </List>
 
-          <List>
-            <ListItem button>
-              <ListItemIcon>
-                <InboxIcon />
-              </ListItemIcon>
-              <ListItemText>Inventory</ListItemText>
-            </ListItem>
-          </List>
+            <List>
+              <ListItem button>
+                <ListItemIcon>
+                  <InboxIcon />
+                </ListItemIcon>
+                <ListItemText>Inventory</ListItemText>
+              </ListItem>
+            </List>
 
-          <List>
-            <ListItem button>
-              <ListItemIcon>
-                <InboxIcon />
-              </ListItemIcon>
-              <ListItemText>Sales</ListItemText>
-            </ListItem>
-          </List>
+            <List>
+              <ListItem button>
+                <ListItemIcon>
+                  <InboxIcon />
+                </ListItemIcon>
+                <ListItemText>Sales</ListItemText>
+              </ListItem>
+            </List>
 
-          <List>
-            <ListItem
-              button
-              selected={location.pathname === '/watchlist'}
-              onClick={goToRoute('/watchlist')}
-            >
-              <ListItemIcon>
-                <InboxIcon />
-              </ListItemIcon>
-              <ListItemText>Watchlist</ListItemText>
-            </ListItem>
-          </List>
+            <List>
+              <ListItem
+                button
+                selected={location.pathname === '/watchlist'}
+                onClick={goToRoute('/watchlist')}
+              >
+                <ListItemIcon>
+                  <InboxIcon />
+                </ListItemIcon>
+                <ListItemText>Watchlist</ListItemText>
+              </ListItem>
+            </List>
 
-          <List>
-            <ListItem
-              button
-              selected={location.pathname === '/config'}
-              onClick={goToRoute('/config')}
-            >
-              <ListItemIcon>
-                <InboxIcon />
-              </ListItemIcon>
-              <ListItemText>Trading Config</ListItemText>
-            </ListItem>
-          </List>
+            <List>
+              <ListItem
+                button
+                selected={location.pathname === '/config'}
+                onClick={goToRoute('/config')}
+              >
+                <ListItemIcon>
+                  <InboxIcon />
+                </ListItemIcon>
+                <ListItemText>Trading Config</ListItemText>
+              </ListItem>
+            </List>
 
-          <Divider />
-          <Characters />
-        </div>
-      </Drawer>
-      <main className={classes.content}>
-        <Toolbar />
-        <Switch>
-          <Route path="/config" component={TradeConfig} />
-          <Route path="/callback" component={AddCharacter} />
-          <Route path="/character/:characterId" component={Character} />
-          <Route component={Intro} />
-        </Switch>
-      </main>
-    </div>
+            <Divider />
+            <Characters />
+          </div>
+        </Drawer>
+        <main className={classes.content}>
+          <Toolbar />
+          <Switch>
+            <Route path="/config" component={TradeConfig} />
+            <Route path="/callback" component={AddCharacter} />
+            <Route path="/character/:characterId" component={Character} />
+            <Route component={Intro} />
+          </Switch>
+        </main>
+      </div>
+    </AuthContext.Provider>
   );
 };

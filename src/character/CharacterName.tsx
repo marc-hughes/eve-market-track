@@ -14,12 +14,14 @@ import { red } from '@material-ui/core/colors';
 interface CharacterNameProps {
   name: string;
   id: number | string;
+  children?: ReactElement<any>;
 }
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
-      flexGrow: 1
+      width: '100%',
+      flexGrow: 0
     },
     media: {
       height: 0,
@@ -43,7 +45,8 @@ const useStyles = makeStyles((theme: Theme) =>
 
 export const CharacterName = ({
   name,
-  id
+  id,
+  children
 }: CharacterNameProps): ReactElement => {
   const classes = useStyles();
   return (
@@ -60,6 +63,7 @@ export const CharacterName = ({
         title={name}
         //        subheader="0isk"
       />
+      {children}
     </Card>
   );
 };
