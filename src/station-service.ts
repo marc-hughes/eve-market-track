@@ -1,3 +1,5 @@
+import { useLiveQuery } from 'dexie-react-hooks';
+import { IStation } from './config/IStation';
 import { db } from './data/db';
 import { esiStation, esiStructure, IAuth } from './esi';
 
@@ -55,4 +57,34 @@ export const validateStations = async (
     }
   }
   return Promise.resolve(true);
+};
+
+export const useStations = (): IStation[] =>
+  useLiveQuery(() => db.stations.toArray());
+
+export const useStationMap = (): Record<string, IStation> => {
+  const stations = useLiveQuery(() => db.stations.toArray());
+  if (!stations) {
+    return {};
+  }
+
+  const map = stations.reduce((map: Record<string, IStation>, station) => {
+    map[String(station.id)] = station;
+    return map;
+  }, {});
+
+  return new Proxy(map, {
+    get: function (object, property: string): IStation {
+      // eslint-disable-next-line no-prototype-builtins
+      return object.hasOwnProperty(property)
+        ? object[property]
+        : {
+            id: parseInt(property, 10),
+            name: property,
+            ownerId: 0,
+            solarSystemId: 0,
+            typeId: 0
+          };
+    }
+  });
 };

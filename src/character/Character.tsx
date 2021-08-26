@@ -46,6 +46,8 @@ export const Character: React.FC = () => {
           >
             Refresh Transactions
           </Button>
+          Transactions are cached for an hour by CCP, so you can't update more
+          often than that.
         </CardActions>
       </CharacterName>
       <GridContainer>

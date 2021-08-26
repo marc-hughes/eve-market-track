@@ -15,11 +15,12 @@ import { esiOpenMarket } from '../esi';
 import { IStation } from '../config/IStation';
 import { IChar } from './IChar';
 import { db } from '../data/db';
+import { useStationMap } from '../station-service';
 
 export const WalletLog: React.FC<{
   character: IChar;
 }> = ({ character }) => {
-  const stations = useLiveQuery(() => db.stations.toArray());
+  const stationMap = useStationMap();
 
   const transactions = useLiveQuery(
     () =>
@@ -33,15 +34,7 @@ export const WalletLog: React.FC<{
     }
   };
 
-  if (!character || !stations || !transactions) return null;
-
-  const stationMap: Record<string, IStation> = stations.reduce(
-    (map: Record<string, IStation>, station) => {
-      map[String(station.id)] = station;
-      return map;
-    },
-    {}
-  );
+  if (!character || !transactions) return null;
 
   const columns: GridColDef[] = [
     { field: 'date', headerName: 'date', width: 180 },
@@ -70,6 +63,7 @@ export const WalletLog: React.FC<{
       headerName: 'each',
       width: 120,
       valueFormatter: (params: GridValueGetterParams) =>
+        (params.row.isBuy ? '-' : '') +
         millify(params.getValue(params.id, 'unitPrice') as number, {
           precision: 2
         })
@@ -80,6 +74,7 @@ export const WalletLog: React.FC<{
       headerName: 'total',
       width: 120,
       valueFormatter: (params: GridValueGetterParams) =>
+        (params.row.isBuy ? '-' : '') +
         millify(params.getValue(params.id, 'totalPrice') as number, {
           precision: 2
         }),

@@ -95,27 +95,20 @@ export const Dashboard = (props: any) => {
                 </ListItemIcon>
                 <ListItemText>Importing</ListItemText>
               </ListItem>
-            </List>
 
-            <List>
               <ListItem button>
                 <ListItemIcon>
                   <InboxIcon />
                 </ListItemIcon>
                 <ListItemText>Inventory</ListItemText>
               </ListItem>
-            </List>
 
-            <List>
               <ListItem button>
                 <ListItemIcon>
                   <InboxIcon />
                 </ListItemIcon>
                 <ListItemText>Sales</ListItemText>
               </ListItem>
-            </List>
-
-            <List>
               <ListItem
                 button
                 selected={location.pathname === '/watchlist'}
@@ -126,9 +119,7 @@ export const Dashboard = (props: any) => {
                 </ListItemIcon>
                 <ListItemText>Watchlist</ListItemText>
               </ListItem>
-            </List>
 
-            <List>
               <ListItem
                 button
                 selected={location.pathname === '/config'}

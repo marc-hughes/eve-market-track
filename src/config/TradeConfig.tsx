@@ -1,8 +1,10 @@
 import React from 'react';
-import { TradeRouteConfig } from './TradeRouteConfig';
+import { TradeRouteAdd } from './TradeRouteAdd';
+import { TradeRouteList } from './TradeRouteList';
 
 export const TradeConfig: React.FC = () => (
   <div>
-    <TradeRouteConfig />
+    <TradeRouteAdd />
+    <TradeRouteList />
   </div>
 );
