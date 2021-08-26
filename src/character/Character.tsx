@@ -1,4 +1,4 @@
-import { Button, Card, CardActions, Table } from '@material-ui/core';
+import { Button, CardActions } from '@material-ui/core';
 import { useLiveQuery } from 'dexie-react-hooks';
 import React from 'react';
 import { useRouteMatch } from 'react-router';
@@ -13,6 +13,9 @@ import {
 } from '@material-ui/data-grid';
 import millify from 'millify';
 import styled from '@emotion/styled';
+import { getItem } from '../items/esi-static';
+import { ItemImage } from '../items/ItemImage';
+import { esiOpenMarket } from '../esi';
 
 const PageContainer = styled.div({
   display: 'flex',
@@ -25,7 +28,8 @@ const GridContainer = styled.div({
   width: '100%',
   flex: '1 1 auto',
   label: 'GridContainer',
-  marginTop: 10
+  marginTop: 10,
+  fontSize: 10
 });
 
 const columns: GridColDef[] = [
@@ -33,7 +37,17 @@ const columns: GridColDef[] = [
   // { field: 'isBuy', headerName: 'isBuy', width: 90 },
   { field: 'locationId', headerName: 'locationId', width: 110 },
 
-  { field: 'typeId', headerName: 'typeId', width: 150 },
+  {
+    field: 'typeId',
+    headerName: 'Item',
+    width: 300,
+    renderCell: (params: GridValueGetterParams) => (
+      <React.Fragment>
+        <ItemImage typeId={params.row.typeId} />
+        {getItem(params.row.typeId)?.typeName}
+      </React.Fragment>
+    )
+  },
   {
     field: 'unitPrice',
     headerName: 'each',
@@ -71,6 +85,12 @@ export const Character: React.FC = () => {
     [characterId]
   );
 
+  const onCellDoubleClick = (params: GridValueGetterParams) => {
+    if (params.field === 'typeId') {
+      esiOpenMarket(character, { type_id: params.row.typeId });
+    }
+  };
+
   if (!character) return null;
 
   return (
@@ -88,6 +108,7 @@ export const Character: React.FC = () => {
       </CharacterName>
       <GridContainer>
         <DataGrid
+          onCellDoubleClick={onCellDoubleClick}
           columns={columns}
           rows={transactions}
           getRowId={(row) => row.transactionId}
