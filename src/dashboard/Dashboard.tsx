@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  Link,
-  Route,
-  Switch,
-  useHistory,
-  useLocation,
-  useRouteMatch
-} from 'react-router-dom';
+import { Route, Switch, useHistory, useLocation } from 'react-router-dom';
 import { createStyles, Theme, makeStyles } from '@material-ui/core/styles';
 import Drawer from '@material-ui/core/Drawer';
 import AppBar from '@material-ui/core/AppBar';
@@ -34,7 +27,7 @@ const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       display: 'flex',
-      height: '100%'
+      height: 'calc(100% - 50px)'
     },
     appBar: {
       zIndex: theme.zIndex.drawer + 1
