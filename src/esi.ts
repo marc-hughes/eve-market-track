@@ -23,53 +23,55 @@ function esiRequest<TRequest, TResponse>(
   auth: IAuth,
   path: string,
   params: Record<string, string>,
-  base: string
+  base: string,
+  method: 'get' | 'post' = 'get'
 ): Promise<AxiosResponse<TResponse>> {
-  return axios
-    .get(base + path, {
-      headers: {
-        Authorization: `Bearer ${auth.accessToken}`
-      },
-      params
-    })
-    .catch((e) => {
-      if (
-        e.isAxiosError &&
-        e.response.status === 403 &&
-        e.response.data.error === 'token is expired'
-      ) {
-        // we need to refresh our auth token.
-        const oauthParams = new URLSearchParams();
-        oauthParams.append('grant_type', 'refresh_token');
-        oauthParams.append('refresh_token', auth.refreshToken);
-        oauthParams.append('client_id', '6d9027a5346d42e1babfda3a8b34a1f1');
-        return axios
-          .post('https://login.eveonline.com/v2/oauth/token', oauthParams, {
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-              Host: 'login.eveonline.com'
-            }
-          })
-          .then(({ data }) => {
-            const accessToken = data.access_token;
-            const refreshToken = data.refresh_token;
-            const newAuth = { accessToken, refreshToken };
-            db.characters
-              .where('refreshToken')
-              .equals(refreshToken)
-              .modify({ accessToken: accessToken });
-            // Retry the original request with new auth data.
-            return esiRequest<TRequest, TResponse>(newAuth, path, params, base);
-          });
-      }
+  return axios({
+    method,
+    url: base + path,
+    headers: {
+      Authorization: `Bearer ${auth.accessToken}`
+    },
+    params
+  }).catch((e) => {
+    if (
+      e.isAxiosError &&
+      e.response.status === 403 &&
+      e.response.data.error === 'token is expired'
+    ) {
+      // we need to refresh our auth token.
+      const oauthParams = new URLSearchParams();
+      oauthParams.append('grant_type', 'refresh_token');
+      oauthParams.append('refresh_token', auth.refreshToken);
+      oauthParams.append('client_id', '6d9027a5346d42e1babfda3a8b34a1f1');
+      return axios
+        .post('https://login.eveonline.com/v2/oauth/token', oauthParams, {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Host: 'login.eveonline.com'
+          }
+        })
+        .then(({ data }) => {
+          const accessToken = data.access_token;
+          const refreshToken = data.refresh_token;
+          const newAuth = { accessToken, refreshToken };
+          db.characters
+            .where('refreshToken')
+            .equals(refreshToken)
+            .modify({ accessToken: accessToken });
+          // Retry the original request with new auth data.
+          return esiRequest<TRequest, TResponse>(newAuth, path, params, base);
+        });
+    }
 
-      return Promise.reject(e);
-    });
+    return Promise.reject(e);
+  });
 }
 
 function genRequest<TRequest, TResponse>(
   path: string,
-  base = 'https://esi.evetech.net/latest'
+  base = 'https://esi.evetech.net/latest',
+  method: 'get' | 'post' = 'get'
 ) {
   return (
     auth: IAuth,
@@ -83,7 +85,8 @@ function genRequest<TRequest, TResponse>(
         return acc.replace(`:${key}`, value);
       }, path),
       params,
-      base
+      base,
+      method
     );
 }
 
@@ -134,3 +137,9 @@ export const esiWalletTransactions = genRequest<
   NoRequestBody,
   IESIWalletTransactionResponse[]
 >('/characters/:id/wallet/transactions/');
+
+export const esiOpenMarket = genRequest<NoRequestBody, NoRequestBody>(
+  '/ui/openwindow/marketdetails/',
+  'https://esi.evetech.net/latest',
+  'post'
+);
