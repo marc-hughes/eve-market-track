@@ -1,3 +1,4 @@
+import { validateStations } from '../station-service';
 import { db } from '../data/db';
 import { esiWalletTransactions } from '../esi';
 import { IChar } from './IChar';
@@ -19,8 +20,14 @@ export const refreshWallet = (character: IChar): Promise<boolean> => {
         typeId: transaction.type_id,
         unitPrice: transaction.unit_price
       }));
-      db.walletTransactions.bulkPut(transactions);
-      return true;
+
+      return Promise.all([
+        db.walletTransactions.bulkPut(transactions),
+        validateStations(
+          character,
+          transactions.map<number>((t: IWalletEntry) => t.locationId)
+        )
+      ]).then(() => true);
     }
   );
 };

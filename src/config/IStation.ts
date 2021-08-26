@@ -1,4 +1,7 @@
 export interface IStation {
-  id: string;
+  id: number;
   name: string;
+  ownerId: number;
+  solarSystemId: number;
+  typeId: number;
 }

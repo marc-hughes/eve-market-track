@@ -1,7 +1,7 @@
 import axios, { AxiosResponse } from 'axios';
 import { db } from './data/db';
 
-type IAuth = { accessToken: string; refreshToken: string };
+export type IAuth = { accessToken: string; refreshToken: string };
 export interface AuthTokenInfo {
   accessToken: string;
   refreshToken: string;
@@ -142,4 +142,40 @@ export const esiOpenMarket = genRequest<NoRequestBody, NoRequestBody>(
   '/ui/openwindow/marketdetails/',
   'https://esi.evetech.net/latest',
   'post'
+);
+
+interface Position {
+  x: number;
+  y: number;
+  z: number;
+}
+interface IESIStationResponse {
+  max_dockable_ship_volume: number;
+  name: string;
+  office_rental_cost: number;
+  owner: number;
+  position: Position;
+  race_id: number;
+  reprocessing_efficiency: number;
+  reprocessing_stations_take: number;
+  services: string[];
+  station_id: number;
+  system_id: number;
+  type_id: number;
+}
+
+export const esiStation = genRequest<NoRequestBody, IESIStationResponse>(
+  '/universe/stations/:stationId/'
+);
+
+interface IESIStructureResponse {
+  name: string;
+  owner_id: number;
+  position: Position;
+  solar_system_id: number;
+  type_id: number;
+}
+
+export const esiStructure = genRequest<NoRequestBody, IESIStructureResponse>(
+  '/universe/structures/:structureId/'
 );
