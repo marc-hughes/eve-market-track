@@ -1,0 +1,127 @@
+{
+  "name": "eve-market-track",
+  "productName": "eve-market-track",
+  "version": "1.0.0",
+  "description": "My Electron application description",
+  "main": ".webpack/main",
+  "scripts": {
+    "build-web": "webpack --config webpack.web.config.js && cp public/index.html dist",
+    "start": "cross-env ELECTRON_WEBPACK_APP_DEV=1 electron-forge start --inspect-electron",
+    "package": "electron-forge package",
+    "set-ver": "node ./build-version.js",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish",
+    "lint": "eslint --ext .ts,.tsx .",
+    "del-map": "rm out/eve-market-track-win32-x64/resources/app/.webpack/renderer/main_window/index.js.map",
+    "build": "npm run make ; npm run del-map",
+    "prettier": "prettier  **/*.ts? --write"
+  },
+  "keywords": [],
+  "author": {
+    "name": "Trenzalore Strax",
+    "email": "trenzalore@wpidalamar.com"
+  },
+  "license": "MIT",
+  "config": {
+    "forge": {
+      "packagerConfig": {},
+      "makers": [
+        {
+          "name": "@electron-forge/maker-squirrel",
+          "config": {
+            "name": "eve_market_track"
+          }
+        },
+        {
+          "name": "@electron-forge/maker-zip",
+          "platforms": [
+            "darwin"
+          ]
+        },
+        {
+          "name": "@electron-forge/maker-deb",
+          "config": {}
+        },
+        {
+          "name": "@electron-forge/maker-rpm",
+          "config": {}
+        }
+      ],
+      "plugins": [
+        [
+          "@electron-forge/plugin-webpack",
+          {
+            "mainConfig": "./webpack.main.config.js",
+            "renderer": {
+              "config": "./webpack.renderer.config.js",
+              "entryPoints": [
+                {
+                  "html": "./src/index.html",
+                  "js": "./src/renderer.ts",
+                  "name": "main_window"
+                }
+              ]
+            }
+          }
+        ]
+      ]
+    }
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^6.0.0-beta.59",
+    "@electron-forge/maker-deb": "^6.0.0-beta.59",
+    "@electron-forge/maker-rpm": "^6.0.0-beta.59",
+    "@electron-forge/maker-squirrel": "^6.0.0-beta.59",
+    "@electron-forge/maker-zip": "^6.0.0-beta.59",
+    "@electron-forge/plugin-webpack": "^6.0.0-beta.59",
+    "@types/react": "^17.0.19",
+    "@types/react-dom": "^17.0.9",
+    "@types/react-router-dom": "^5.1.8",
+    "@typescript-eslint/eslint-plugin": "^4.29.2",
+    "@typescript-eslint/parser": "^4.29.2",
+    "@vercel/webpack-asset-relocator-loader": "^1.6.0",
+    "css-loader": "^6.2.0",
+    "electron": "13.2.1",
+    "electron-devtools-installer": "^3.2.0",
+    "eslint": "^7.32.0",
+    "eslint-plugin-import": "^2.24.1",
+    "fork-ts-checker-webpack-plugin": "^6.3.2",
+    "node-loader": "^2.0.0",
+    "prettier": "^2.3.2",
+    "style-loader": "^3.2.1",
+    "ts-loader": "^9.2.5",
+    "typescript": "^4.3.5",
+    "webpack-cli": "^4.8.0"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.4.1",
+    "@emotion/styled": "^11.3.0",
+    "@material-ui/core": "^4.12.3",
+    "@material-ui/data-grid": "^4.0.0-alpha.37",
+    "@material-ui/icons": "^4.11.2",
+    "@material-ui/lab": "^4.0.0-alpha.60",
+    "@rehooks/local-storage": "^2.4.1",
+    "@sentry/react": "^6.12.0",
+    "@sentry/tracing": "^6.12.0",
+    "async-batch": "^1.1.1",
+    "axios": "^0.21.2",
+    "copy-webpack-plugin": "^9.0.1",
+    "cross-env": "^7.0.3",
+    "crypto-browserify": "^3.12.0",
+    "dexie": "^3.2.0-beta.3",
+    "dexie-react-hooks": "^1.0.7",
+    "electron-squirrel-startup": "^1.0.0",
+    "millify": "^4.0.0",
+    "moment": "^2.29.1",
+    "node-polyfill-webpack-plugin": "^1.1.4",
+    "pkce-challenge": "^2.2.0",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-fast-compare": "^3.2.0",
+    "react-router": "^5.2.0",
+    "react-router-dom": "^5.2.0",
+    "recharts": "^2.1.2",
+    "stream-browserify": "^3.0.0",
+    "swr": "^0.5.6"
+  }
+}
