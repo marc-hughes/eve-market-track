@@ -1,7 +1,7 @@
 export interface ITradeRoute {
   id?: number;
-  fromStation: string;
-  toStation: string;
+  fromStation: number;
+  toStation: number;
   shippingCost: number;
   tax: number;
   broker: number;

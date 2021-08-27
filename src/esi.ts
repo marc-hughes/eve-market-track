@@ -47,8 +47,8 @@ function esiRequest<TRequest, TResponse>(
       return axios
         .post('https://login.eveonline.com/v2/oauth/token', oauthParams, {
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            Host: 'login.eveonline.com'
+            'Content-Type': 'application/x-www-form-urlencoded'
+            //Host: 'login.eveonline.com'
           }
         })
         .then(({ data }) => {
@@ -179,3 +179,28 @@ interface IESIStructureResponse {
 export const esiStructure = genRequest<NoRequestBody, IESIStructureResponse>(
   '/universe/structures/:structureId/'
 );
+
+interface IESIMarketOrderResponse {
+  is_buy_order: boolean;
+  issued: boolean;
+  location_id: number;
+  min_volume: number;
+  order_id: number;
+  price: number;
+  range: string;
+  region_id?: number;
+  type_id: number;
+  volume_remain: number;
+  volume_total: number;
+  duration: number;
+}
+
+export const esiMarketOrders = genRequest<
+  NoRequestBody,
+  IESIMarketOrderResponse[]
+>('/markets/structures/:structureId/');
+
+export const esiRegionMarketOrders = genRequest<
+  NoRequestBody,
+  IESIMarketOrderResponse[]
+>('/markets/:regionId/orders/');

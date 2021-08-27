@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { MouseEventHandler, useState } from 'react';
 import { useTradeRoutes } from './trade-route-service';
 import { makeStyles } from '@material-ui/core/styles';
 import Table from '@material-ui/core/Table';
@@ -9,6 +9,11 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
 import { useStationMap } from '../station-service';
+import { Button } from '@material-ui/core';
+import { ITradeRoute } from './ITradeRoute';
+import { useAuth } from '../auth';
+import { esiMarketOrders, IAuth } from '../esi';
+import { updateMarket } from '../market-service';
 
 const useStyles = makeStyles({
   table: {
@@ -18,8 +23,19 @@ const useStyles = makeStyles({
 
 export const TradeRouteList: React.FC = (props) => {
   const classes = useStyles();
+  const auth = useAuth();
   const stations = useStationMap();
   const routes = useTradeRoutes();
+  const [loading, setLoading] = useState(false);
+
+  const refreshRoute = (route: ITradeRoute) => {
+    setLoading(true);
+    Promise.all([
+      updateMarket(auth, route.fromStation),
+      updateMarket(auth, route.toStation)
+    ]).then(() => setLoading(false));
+  };
+
   if (!routes) {
     return null;
   }
@@ -47,6 +63,17 @@ export const TradeRouteList: React.FC = (props) => {
               <TableCell align="right">{route.broker}%</TableCell>
               <TableCell align="right">{route.tax}%</TableCell>
               <TableCell align="right">{route.shippingCost}isk/m3</TableCell>
+              {loading || (
+                <TableCell>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    onClick={() => refreshRoute(route)}
+                  >
+                    Refresh Prices
+                  </Button>
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>
