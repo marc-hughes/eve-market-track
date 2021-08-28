@@ -1,7 +1,7 @@
 export interface IOrders {
   duration: number;
   isBuyOrder: boolean;
-  issued: boolean;
+  issued: string;
   locationId: number;
   minVolume: number;
   orderId: number;
@@ -10,4 +10,11 @@ export interface IOrders {
   typeId: number;
   volumeRemain: number;
   volumeTotal: number;
+}
+
+export interface IOwnOrder extends IOrders {
+  characterId: number;
+  escrow: number;
+  isCorporation: boolean;
+  regionId: number;
 }

@@ -1,6 +1,6 @@
 export interface IWalletEntry {
   transactionId: number;
-  characterId: string;
+  characterId: number;
   clientId: number;
   date: string;
   isBuy: boolean;

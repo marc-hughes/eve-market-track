@@ -59,7 +59,7 @@ export const AddCharacter = (): ReactElement => {
         setCharacter({ name: result.characterName, id: result.characterID });
         const char = {
           name: result.characterName,
-          id: String(result.characterID),
+          id: result.characterID,
           wallet: 0,
           accessToken: result.accessToken,
           refreshToken: result.refreshToken,

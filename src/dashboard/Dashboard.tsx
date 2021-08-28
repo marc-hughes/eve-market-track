@@ -8,6 +8,7 @@ import List from '@material-ui/core/List';
 import Typography from '@material-ui/core/Typography';
 import Divider from '@material-ui/core/Divider';
 import ListItem from '@material-ui/core/ListItem';
+import SettingsIcon from '@material-ui/icons/Settings';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 import InboxIcon from '@material-ui/icons/MoveToInbox';
@@ -88,6 +89,8 @@ export const Dashboard = (props: any) => {
         >
           <Toolbar />
           <div className={classes.drawerContainer}>
+            <Characters />
+            <Divider />
             <List>
               <ListItem button>
                 <ListItemIcon>
@@ -96,44 +99,17 @@ export const Dashboard = (props: any) => {
                 <ListItemText>Importing</ListItemText>
               </ListItem>
 
-              <ListItem button>
-                <ListItemIcon>
-                  <InboxIcon />
-                </ListItemIcon>
-                <ListItemText>Inventory</ListItemText>
-              </ListItem>
-
-              <ListItem button>
-                <ListItemIcon>
-                  <InboxIcon />
-                </ListItemIcon>
-                <ListItemText>Sales</ListItemText>
-              </ListItem>
-              <ListItem
-                button
-                selected={location.pathname === '/watchlist'}
-                onClick={goToRoute('/watchlist')}
-              >
-                <ListItemIcon>
-                  <InboxIcon />
-                </ListItemIcon>
-                <ListItemText>Watchlist</ListItemText>
-              </ListItem>
-
               <ListItem
                 button
                 selected={location.pathname === '/config'}
                 onClick={goToRoute('/config')}
               >
                 <ListItemIcon>
-                  <InboxIcon />
+                  <SettingsIcon />
                 </ListItemIcon>
                 <ListItemText>Trading Config</ListItemText>
               </ListItem>
             </List>
-
-            <Divider />
-            <Characters />
           </div>
         </Drawer>
         <main className={classes.content}>

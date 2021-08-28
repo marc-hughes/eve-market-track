@@ -58,6 +58,15 @@ export const updateMarket = async (
       volumeRemain: p.volume_remain,
       volumeTotal: p.volume_total
     }));
-
-  await db.orders.bulkPut(allOrders);
+  try {
+    console.info(`Retrieved ${allOrders.length} orders`);
+    await db.orders.where({ locationId: structureId }).delete();
+    console.info('Old orders deleted');
+    await db.orders.bulkPut(allOrders);
+    console.info('New orders saved');
+  } catch (e) {
+    console.error(e);
+    // TODO: HANDLE ERRORS
+    throw e;
+  }
 };

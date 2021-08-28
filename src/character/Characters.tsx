@@ -1,4 +1,5 @@
 import {
+  Avatar,
   Button,
   List,
   ListItem,
@@ -53,7 +54,14 @@ export const Characters: React.FC = () => {
           key={index}
           onClick={() => history.push(`/character/${char.id}`)}
         >
-          <CharacterName name={char.name} id={char.id} />
+          <ListItemIcon>
+            <Avatar
+              aria-label="recipe"
+              alt={char.name}
+              src={`https://image.eveonline.com/Character/${char.id}_64.jpg`}
+            />
+          </ListItemIcon>
+          <ListItemText>{char.name}</ListItemText>
         </ListItem>
       ))}
       <ListItem>

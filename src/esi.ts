@@ -182,7 +182,7 @@ export const esiStructure = genRequest<NoRequestBody, IESIStructureResponse>(
 
 interface IESIMarketOrderResponse {
   is_buy_order: boolean;
-  issued: boolean;
+  issued: string;
   location_id: number;
   min_volume: number;
   order_id: number;
@@ -204,3 +204,27 @@ export const esiRegionMarketOrders = genRequest<
   NoRequestBody,
   IESIMarketOrderResponse[]
 >('/markets/:regionId/orders/');
+
+interface IESIMarketOwnOrderResponse {
+  is_buy_order: boolean;
+  issued: string;
+  location_id: number;
+  min_volume: number;
+  order_id: number;
+  price: number;
+  range: string;
+  region_id?: number;
+  type_id: number;
+  volume_remain: number;
+  volume_total: number;
+  duration: number;
+
+  character_id: number;
+  escrow: number;
+  is_corporation: boolean;
+  regionId: number;
+}
+export const esiMarketOwnOrders = genRequest<
+  NoRequestBody,
+  IESIMarketOwnOrderResponse[]
+>('/characters/:characterId/orders/');

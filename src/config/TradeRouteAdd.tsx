@@ -12,6 +12,7 @@ import {
 } from '@material-ui/core';
 import { db } from '../data/db';
 import { ITradeRoute } from './ITradeRoute';
+import { Alert } from '@material-ui/lab';
 
 const StationInput: React.FC<{
   stations: IStation[];
@@ -78,11 +79,11 @@ export const TradeRouteAdd: React.FC = () => {
   return (
     <div>
       <h1>Trade Routes</h1>
-      <p>
+      <Alert severity="info">
         This is where you configure where you are going to import from 👉 to.
         You'll only see stations that you've traded at, so if the one you want
         is missing, go buy something and refresh that character's transactions.
-      </p>
+      </Alert>
 
       <Paper>
         <Grid container className={classes.root} spacing={2}>
