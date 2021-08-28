@@ -15,7 +15,7 @@ export const refreshWallet = (character: IChar): Promise<boolean> => {
       characterId: character.id,
       clientId: transaction.client_id,
       date: transaction.date,
-      isBuy: transaction.is_buy,
+      isBuy: transaction.is_buy ? 1 : 0, // need to convert to number so we can index
       isPersonal: transaction.is_personal,
       journalRefId: transaction.journal_ref_id,
       locationId: transaction.location_id,

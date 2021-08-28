@@ -3,7 +3,7 @@ export interface IWalletEntry {
   characterId: number;
   clientId: number;
   date: string;
-  isBuy: boolean;
+  isBuy: number;
   isPersonal: boolean;
   journalRefId: number;
   locationId: number;

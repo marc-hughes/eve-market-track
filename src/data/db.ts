@@ -20,9 +20,10 @@ class AppDB extends Dexie {
       characters: 'id,name,refreshToken',
       tradeRoute: 'id++,fromStation,toStation',
       stations: 'id,name,ownerId,solarSystemId,typeId',
-      walletTransactions: 'transactionId,[characterId+date]',
+      walletTransactions:
+        'transactionId,[characterId+date],[typeId+isBuy+date]',
       orders: 'orderId,locationId,typeId',
-      ownOrders: 'orderId,locationId,[characterId+issued]'
+      ownOrders: 'orderId,locationId,[characterId+issued],[typeId+issued]'
     });
 
     // The following line is needed if your typescript

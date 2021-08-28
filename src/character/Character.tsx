@@ -133,7 +133,6 @@ export const Character: React.FC = () => {
       </Paper>
 
       <Drawer
-        variant="persistent"
         anchor="bottom"
         open={!!focusedItemId}
         onClose={() => setFocusedItemId(null)}
