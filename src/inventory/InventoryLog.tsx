@@ -17,6 +17,14 @@ import { db } from '../data/db';
 import { useStationMap, useStations } from '../station-service';
 import { IStation } from '../config/IStation';
 import { StationInput } from '../config/StationSelect';
+import { makeStyles } from '@material-ui/core';
+
+const useStyle = makeStyles({
+  stationSelect: {
+    position: 'relative',
+    top: 10
+  }
+});
 
 type ItemSelectedCallback = (itemId: number) => void;
 type ItemListCallback = (itemId: number[]) => void;
@@ -29,6 +37,7 @@ export const InventoryLog: React.FC<{
   const stationMap = useStationMap();
   const stations = useStations();
   const [station, setStation] = useState(null);
+  const classes = useStyle();
 
   const inventory = useLiveQuery(
     () =>
@@ -56,6 +65,16 @@ export const InventoryLog: React.FC<{
       field: 'locationId',
       headerName: 'locationId',
       width: 300,
+      sortable: false,
+      renderHeader: (params) => (
+        <StationInput
+          className={classes.stationSelect}
+          value={station}
+          onChange={(event: ChangeEvent, value: IStation) => setStation(value)}
+          label="Station"
+          stations={stations}
+        />
+      ),
       valueFormatter: (params: GridValueGetterParams) =>
         stationMap[params.row.locationId]?.name
     },
@@ -77,12 +96,6 @@ export const InventoryLog: React.FC<{
 
   return (
     <React.Fragment>
-      <StationInput
-        value={station}
-        onChange={(event: ChangeEvent, value: IStation) => setStation(value)}
-        label="Station"
-        stations={stations}
-      />
       <DataGrid
         onRowClick={(params) => onItemSelected(params.row.typeId)}
         columns={columns}

@@ -36,10 +36,14 @@ class AppDB extends Dexie {
     this.version(3).stores({
       inventory: 'itemId,locationId,[characterId+locationId]'
     });
+
     this.version(4).stores({
       inventory: 'itemId,locationId,characterId,[characterId+locationId]'
     });
 
+    this.version(5).stores({
+      inventory: 'itemId,locationId,characterId,[characterId+locationId],typeId'
+    });
     // The following line is needed if your typescript
     // is compiled using babel instead of tsc:
     //this.characters = this.table('characters');

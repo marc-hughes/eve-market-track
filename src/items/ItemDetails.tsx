@@ -23,6 +23,8 @@ import { IStation } from '../config/IStation';
 import { ItemTradeRoute } from './ItemTradeRoute';
 import { esiOpenMarket } from '../esi';
 import { IOwnOrder, useBestSell } from '../orders/orders';
+import { IInventory } from '../inventory/inventory';
+import { useCharacters } from '../character/character-service';
 
 /*
     [img]
@@ -163,6 +165,35 @@ const ActiveOrder: React.FC<{ order: IOwnOrder }> = ({ order }) => {
   );
 };
 
+const InventoryTable: React.FC<{
+  inventory: IInventory[];
+  stationMap: Record<string, IStation>;
+}> = ({ inventory, stationMap }) => {
+  const characters = useCharacters();
+
+  return inventory?.length > 0 ? (
+    <Table size="small">
+      <TableBody>
+        {inventory?.map((inv) => (
+          <TableRow key={inv.itemId}>
+            <TableCell style={{ width: 250 }} component="th" scope="row">
+              {stationMap[inv.locationId].name}
+            </TableCell>
+            <TableCell>
+              {characters?.find((c) => c.id === inv.characterId)?.name ||
+                inv.characterId}
+            </TableCell>
+
+            <TableCell>x{millify(inv.quantity)}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  ) : (
+    <span>None Found</span>
+  );
+};
+
 const TransactionTable: React.FC<{
   transactions: IWalletEntry[];
   stationMap: Record<string, IStation>;
@@ -229,6 +260,11 @@ const RightDetailCol: React.FC<{
     [itemId]
   );
 
+  const inventory = useLiveQuery(
+    () => db.inventory.where('typeId').equals(itemId).toArray(),
+    [itemId]
+  );
+
   return (
     <div>
       <h2>Active orders: </h2>
@@ -250,6 +286,8 @@ const RightDetailCol: React.FC<{
       <TransactionTable transactions={recentBuys} stationMap={stationMap} />
       <h2>Recent sales:</h2>
       <TransactionTable transactions={recentSales} stationMap={stationMap} />
+      <h2>Inventory</h2>
+      <InventoryTable inventory={inventory} stationMap={stationMap} />
     </div>
   );
 };

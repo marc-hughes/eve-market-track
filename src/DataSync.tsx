@@ -58,7 +58,6 @@ export const DataSync: React.FC<any> = () => {
   const refresh = async () => {
     setSyncing(true);
     for (const character of characters) {
-      await esiLoginVerify(character);
       await Promise.all([refreshWallet(character), updateOwnOrders(character)]);
       await updateInventory(character);
       setSyncMap((syncMap) => ({ ...syncMap, [character.id]: true }));

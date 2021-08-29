@@ -8,10 +8,12 @@ export const StationInput: React.FC<{
   label: string;
   value: IStation;
   onChange: any;
-}> = ({ stations, label, value, onChange }) => (
+  className?: string;
+}> = ({ stations, label, value, onChange, className = undefined }) => (
   <Autocomplete
     id="combo-box-demo"
     options={stations}
+    className={className}
     value={value}
     onChange={onChange}
     getOptionLabel={(option) => option.name}

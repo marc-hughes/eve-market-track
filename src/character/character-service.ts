@@ -15,3 +15,6 @@ export interface Character {
 
 export const useCharacters = (): IChar[] =>
   useLiveQuery(() => db.characters.toArray());
+
+export const useCharacter = (id: number): IChar[] =>
+  useLiveQuery(() => db.characters.where({ characterId: id }).toArray(), [id]);
