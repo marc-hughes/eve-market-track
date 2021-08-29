@@ -235,3 +235,17 @@ export const esiMarketOwnOrders = genRequest<
   NoRequestBody,
   IESIMarketOwnOrderResponse[]
 >('/characters/:characterId/orders/');
+
+export interface IESICharacterAssets {
+  item_id: number;
+  location_id: number;
+  location_type: string;
+  quantity: number;
+  type_id: number;
+  location_flag: string;
+}
+
+export const esiCharacterAssets = genRequest<
+  NoRequestBody,
+  IESICharacterAssets[]
+>('/characters/:characterId/assets/');

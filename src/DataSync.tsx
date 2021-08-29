@@ -17,6 +17,8 @@ import { updateOwnOrders } from './orders/orders-service';
 import SyncProblemIcon from '@material-ui/icons/SyncProblem';
 import { db } from './data/db';
 import { Alert } from '@material-ui/lab';
+import { updateInventory } from './inventory/inventory-service';
+import { esiLoginVerify } from './esi';
 
 const useStyles = makeStyles(() =>
   createStyles({
@@ -56,7 +58,9 @@ export const DataSync: React.FC<any> = () => {
   const refresh = async () => {
     setSyncing(true);
     for (const character of characters) {
+      await esiLoginVerify(character);
       await Promise.all([refreshWallet(character), updateOwnOrders(character)]);
+      await updateInventory(character);
       setSyncMap((syncMap) => ({ ...syncMap, [character.id]: true }));
     }
 

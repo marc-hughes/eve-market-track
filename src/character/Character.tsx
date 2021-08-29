@@ -17,7 +17,7 @@ import React from 'react';
 import { useRouteMatch } from 'react-router';
 
 import { db } from '../data/db';
-import Dexie from 'dexie';
+
 import { IChar } from './IChar';
 import { refreshWallet } from './wallet-service';
 import styled from '@emotion/styled';
@@ -26,6 +26,8 @@ import { Alert } from '@material-ui/lab';
 import { updateOwnOrders } from '../orders/orders-service';
 import { OrderLog } from '../orders/OrderLog';
 import { ItemDetails } from '../items/ItemDetails';
+import { updateInventory } from '../inventory/inventory-service';
+import { InventoryLog } from '../inventory/InventoryLog';
 
 const PageContainer = styled.div({
   display: 'flex',
@@ -40,7 +42,9 @@ const GridContainer = styled.div({
   flex: '1 1 auto',
   label: 'GridContainer',
   marginTop: 60,
-  fontSize: 10
+  fontSize: 10,
+  display: 'flex',
+  flexDirection: 'column'
 });
 
 const useStyles = makeStyles(() =>
@@ -66,6 +70,9 @@ export const Character: React.FC = () => {
   const [tab, setTab] = React.useState(0);
   const [refreshedOpen, setRefreshedOpen] = React.useState(false);
   const [focusedItemId, setFocusedItemId] = React.useState<number | null>(null);
+  const [itemList, _setItemList] = React.useState<number[]>([]);
+
+  const setItemList = (items: number[]) => _setItemList([...new Set(items)]);
 
   const classes = useStyles();
 
@@ -78,13 +85,11 @@ export const Character: React.FC = () => {
   };
 
   const refresh = () => {
-    Promise.all([
-      refreshWallet(character),
-      updateOwnOrders(character),
-      updateInventory(character)
-    ]).then(() => {
-      setRefreshedOpen(true);
-    });
+    Promise.all([refreshWallet(character), updateOwnOrders(character)])
+      .then(() => updateInventory(character))
+      .then(() => {
+        setRefreshedOpen(true);
+      });
   };
 
   const { characterId } = match.params;
@@ -94,25 +99,14 @@ export const Character: React.FC = () => {
     [characterId]
   );
 
-  const orders = useLiveQuery(
-    () =>
-      character &&
-      db.ownOrders
-        .where(['characterId+issued'])
-        .between([character.id, Dexie.minKey], [character.id, Dexie.maxKey])
-        .reverse()
-        .toArray(),
-    [character]
-  );
-
   if (!character) return null;
 
   const nextItem = () => {
-    if (!focusedItemId || !orders) return;
-    const index = orders.findIndex((o) => o.typeId === focusedItemId);
-    const next = orders[index + 1];
+    if (!focusedItemId) return;
+    const index = itemList.indexOf(focusedItemId);
+    const next = itemList[index + 1];
     if (next) {
-      setFocusedItemId(next.typeId);
+      setFocusedItemId(next);
     }
   };
 
@@ -132,9 +126,9 @@ export const Character: React.FC = () => {
               value={tab}
               onChange={handleTabChange}
             >
-              <Tab label="Transactions" />
               <Tab label="Orders" />
               <Tab label="Inventory" />
+              <Tab label="Transactions" />
             </Tabs>
             <Button onClick={refresh} variant="contained" color="secondary">
               Refresh
@@ -144,24 +138,25 @@ export const Character: React.FC = () => {
 
         <GridContainer>
           {tab === 0 && (
-            <WalletLog
-              onItemSelected={setFocusedItemId}
-              character={character}
-            />
-          )}
-          {tab === 1 && (
             <OrderLog
-              orders={orders}
+              onItemListChanged={setItemList}
               onItemSelected={setFocusedItemId}
               character={character}
             />
           )}
 
+          {tab === 1 && (
+            <InventoryLog
+              character={character}
+              onItemListChanged={setItemList}
+              onItemSelected={setFocusedItemId}
+            />
+          )}
           {tab === 2 && (
-            <h2>
-              Not implemented yet. Eventually, this will let you see your
-              inventory to figure out what should get listed.
-            </h2>
+            <WalletLog
+              onItemSelected={setFocusedItemId}
+              character={character}
+            />
           )}
         </GridContainer>
       </Paper>
@@ -174,7 +169,7 @@ export const Character: React.FC = () => {
         <ItemDetails
           itemId={focusedItemId}
           onNext={nextItem}
-          showNext={tab === 1}
+          showNext={tab !== 2}
         />
       </Drawer>
 

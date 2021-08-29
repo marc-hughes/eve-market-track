@@ -1,5 +1,5 @@
 import React, { ChangeEvent, useState } from 'react';
-import Autocomplete from '@material-ui/lab/Autocomplete';
+
 import { useStations } from '../station-service';
 import { IStation } from './IStation';
 import {
@@ -13,25 +13,7 @@ import {
 import { db } from '../data/db';
 import { ITradeRoute } from './ITradeRoute';
 import { Alert } from '@material-ui/lab';
-
-const StationInput: React.FC<{
-  stations: IStation[];
-  label: string;
-  value: IStation;
-  onChange: any;
-}> = ({ stations, label, value, onChange }) => (
-  <Autocomplete
-    id="combo-box-demo"
-    options={stations}
-    value={value}
-    onChange={onChange}
-    getOptionLabel={(option) => option.name}
-    style={{ width: 300 }}
-    renderInput={(params) => (
-      <TextField {...params} label={label} variant="outlined" />
-    )}
-  />
-);
+import { StationInput } from './StationSelect';
 
 const useStyles = makeStyles(() =>
   createStyles({

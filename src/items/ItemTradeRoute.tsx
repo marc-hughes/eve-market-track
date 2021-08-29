@@ -1,13 +1,62 @@
-import { Divider, Grid } from '@material-ui/core';
+import {
+  Button,
+  createStyles,
+  Divider,
+  Grid,
+  makeStyles
+} from '@material-ui/core';
 import millify from 'millify';
-import { Dir } from 'original-fs';
 import React from 'react';
 import { ITradeRoute } from '../config/ITradeRoute';
 import { useBestSell } from '../orders/orders';
 import { useStationMap } from '../station-service';
 import { IESIStatic } from './esi-static';
 
-//[typeId+locationId]
+const PriceDetailDisplay: React.FC<{
+  buyPrice: number;
+  sellPrice: number;
+  shipping: number;
+  route: ITradeRoute;
+}> = ({ buyPrice, sellPrice, shipping, route }) => {
+  const tax = (route.tax / 100) * sellPrice;
+  const broker = (route.broker / 100) * sellPrice;
+  const profit = sellPrice - buyPrice - tax - broker - shipping;
+  const profitPercent =
+    buyPrice > 0
+      ? Math.round((profit / (buyPrice + tax + broker + shipping)) * 100)
+      : 0;
+
+  const copyPrice = () => {
+    const fourSigDigits = Number.parseFloat(sellPrice.toPrecision(4));
+    navigator.clipboard.writeText(String(fourSigDigits));
+  };
+
+  return (
+    <React.Fragment>
+      <Button onClick={copyPrice}>
+        ${millify(sellPrice, { precision: 3 })}
+      </Button>
+      <div>
+        <i>
+          Ship: <b>{millify(shipping)}</b> Tax: <b>{millify(tax)}</b> Broker:{' '}
+          <b>{millify(broker)}</b>
+        </i>
+        <br />
+        Profit: <b>{millify(profit)}</b> (<b>{profitPercent}%</b>)
+      </div>
+    </React.Fragment>
+  );
+};
+
+const useStyles = makeStyles(() =>
+  createStyles({
+    priceList: {
+      '& li': {
+        paddingBottom: 15
+      }
+    }
+  })
+);
 
 export const ItemTradeRoute: React.FC<{
   itemDef: IESIStatic;
@@ -15,22 +64,22 @@ export const ItemTradeRoute: React.FC<{
   route: ITradeRoute;
 }> = ({ itemDef, itemId, route }) => {
   const stationMap = useStationMap();
-
+  const classes = useStyles();
   const buyInfo = useBestSell(itemId, route.fromStation);
   const sellInfo = useBestSell(itemId, route.toStation);
   const buyPrice = buyInfo?.price || 0;
   const sellPrice = sellInfo?.price || 0;
-  const tax = (route.tax / 100) * sellPrice;
-  const broker = (route.broker / 100) * sellPrice;
   const shipping = Math.ceil(route.shippingCost * itemDef.packagedVolume);
-  const profit = sellPrice - buyPrice - tax - broker - shipping;
-  const profitPercent =
-    buyPrice > 0 ? Math.round((profit / buyPrice) * 100) : 0;
 
-  const plus20 = Math.ceil(
-    (1.2 * (buyPrice + shipping)) /
+  const plus20 = Math.round(
+    (1.2 * buyPrice + 1.2 * shipping) /
       (1 - (1.2 * route.tax) / 100 - (1.2 * route.broker) / 100)
   );
+
+  const breakEven = Math.ceil(
+    (buyPrice + shipping) / (1 - route.tax / 100 - route.broker / 100)
+  );
+
   return (
     <Grid container>
       <Grid item md={12}>
@@ -44,27 +93,33 @@ export const ItemTradeRoute: React.FC<{
         <b>{sellPrice === 0 ? 'Not Found' : millify(sellInfo.price)})</b>
       </Grid>
       <Grid item md={6}>
-        <ul>
+        <ul className={classes.priceList}>
           <li>
-            Sell@ <b>{millify(sellPrice)}</b>
-            <ul>
-              <li>
-                Shipping Cost: <b>{millify(shipping)}</b>
-              </li>
-              <li>
-                Broker Fee: <b>{millify(broker)}</b>
-              </li>
-              <li>
-                Sales Tax: <b>{millify(tax)}</b>
-              </li>
-              <li>
-                Max Potential Profit: <b>{millify(profit)}</b> ({profitPercent}
-                %)
-              </li>
-            </ul>
+            Sell@
+            <PriceDetailDisplay
+              buyPrice={buyPrice}
+              sellPrice={sellPrice}
+              shipping={shipping}
+              route={route}
+            />
           </li>
           <li>
-            Plus 20% Price: <b>{millify(plus20)}</b>
+            Plus 20% Price:
+            <PriceDetailDisplay
+              buyPrice={buyPrice}
+              sellPrice={plus20}
+              shipping={shipping}
+              route={route}
+            />
+          </li>
+          <li>
+            Break even price:
+            <PriceDetailDisplay
+              buyPrice={buyPrice}
+              sellPrice={breakEven}
+              shipping={shipping}
+              route={route}
+            />
           </li>
         </ul>
       </Grid>

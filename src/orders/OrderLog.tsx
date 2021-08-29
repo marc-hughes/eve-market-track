@@ -1,5 +1,5 @@
-import React from 'react';
-
+import React, { useEffect } from 'react';
+import Dexie from 'dexie';
 import { useLiveQuery } from 'dexie-react-hooks';
 
 import {
@@ -18,13 +18,29 @@ import { useStationMap } from '../station-service';
 import { IOwnOrder } from './orders';
 
 type ItemSelectedCallback = (itemId: number) => void;
+type ItemListCallback = (itemId: number[]) => void;
 
 export const OrderLog: React.FC<{
   character: IChar;
   onItemSelected: ItemSelectedCallback;
-  orders: IOwnOrder[];
-}> = ({ character, onItemSelected, orders }) => {
+  onItemListChanged: ItemListCallback;
+}> = ({ character, onItemSelected, onItemListChanged }) => {
   const stationMap = useStationMap();
+  const orders = useLiveQuery(
+    () =>
+      character &&
+      db.ownOrders
+        .where(['characterId+issued'])
+        .between([character.id, Dexie.minKey], [character.id, Dexie.maxKey])
+        .reverse()
+        .toArray(),
+    [character]
+  );
+
+  useEffect(
+    () => orders && onItemListChanged(orders.map((o) => o.typeId)),
+    [orders]
+  );
 
   const onCellDoubleClick = (params: GridValueGetterParams) => {
     if (params.field === 'typeId') {
