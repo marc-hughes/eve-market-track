@@ -12,7 +12,6 @@ import { useStationMap } from '../station-service';
 import { Backdrop, Button, CircularProgress } from '@material-ui/core';
 import { ITradeRoute } from './ITradeRoute';
 import { useAuth } from '../auth';
-import { esiMarketOrders, IAuth } from '../esi';
 import { updateMarket } from '../market-service';
 import { Alert } from '@material-ui/lab';
 
@@ -39,10 +38,9 @@ export const TradeRouteList: React.FC = (props) => {
 
   const refreshRoute = (route: ITradeRoute) => {
     setLoading(true);
-    Promise.all([
-      updateMarket(auth, route.fromStation),
-      updateMarket(auth, route.toStation)
-    ]).then(() => setLoading(false));
+    updateMarket(auth, route.fromStation)
+      .then(() => updateMarket(auth, route.toStation))
+      .then(() => setLoading(false));
   };
 
   if (!routes) {

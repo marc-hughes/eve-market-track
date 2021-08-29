@@ -1,6 +1,10 @@
+import { useLiveQuery } from 'dexie-react-hooks';
+import Dexie from 'dexie';
+import { db } from '../data/db';
+
 export interface IOrders {
   duration: number;
-  isBuyOrder: boolean;
+  isBuyOrder: number;
   issued: string;
   locationId: number;
   minVolume: number;
@@ -18,3 +22,17 @@ export interface IOwnOrder extends IOrders {
   isCorporation: boolean;
   regionId: number;
 }
+
+export const useBestSell = (itemId: number, locationId: number) => {
+  return useLiveQuery(
+    () =>
+      db.orders
+        .where(['typeId+locationId+isBuyOrder+price'])
+        .between(
+          [itemId, locationId, 0, Dexie.minKey],
+          [itemId, locationId, 0, Dexie.maxKey]
+        )
+        .first(),
+    [itemId, locationId]
+  );
+};

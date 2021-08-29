@@ -13,6 +13,7 @@ import { IChar } from './IChar';
 import { db } from '../data/db';
 import { CharacterName } from './CharacterName';
 import { useHistory } from 'react-router-dom';
+import { useCharacters } from './character-service';
 
 // https://developers.eveonline.com/
 const redirectAuth = () => {
@@ -33,7 +34,7 @@ const redirectAuth = () => {
 export const Characters: React.FC = () => {
   const history = useHistory();
 
-  const characters: IChar[] = useLiveQuery(() => db.characters.toArray());
+  const characters: IChar[] = useCharacters();
 
   if (!characters) {
     return <span>'Loading...'</span>;

@@ -1,5 +1,6 @@
 import {
   Avatar,
+  Button,
   createStyles,
   Grid,
   makeStyles,
@@ -19,6 +20,9 @@ import millify from 'millify';
 import { useStationMap } from '../station-service';
 import { IWalletEntry } from '../character/IWalletEntry';
 import { IStation } from '../config/IStation';
+import { ItemTradeRoute } from './ItemTradeRoute';
+import { esiOpenMarket } from '../esi';
+import { IOwnOrder, useBestSell } from '../orders/orders';
 
 /*
     [img]
@@ -50,56 +54,114 @@ const useStyles = makeStyles(() =>
   createStyles({
     root: {
       padding: 15
+    },
+    next: {
+      position: 'fixed',
+      bottom: 5,
+      right: 10
     }
   })
 );
 
 export const ItemDetails: React.FC<{
   itemId: number;
-}> = ({ itemId }) => {
+  showNext: boolean;
+  onNext: () => void;
+}> = ({ itemId, onNext, showNext }) => {
   const classes = useStyles();
   const itemDef = getItem(itemId);
   const characters: IChar[] = useLiveQuery(() => db.characters.toArray());
 
+  const openItemWindow = (char: IChar) => {
+    esiOpenMarket(char, { type_id: String(itemId) }, {});
+  };
+
   if (!itemDef) return null;
   return (
-    <Grid container className={classes.root}>
-      <Grid item md={6}>
-        <LeftDetailCol itemDef={itemDef} itemId={itemId} />
-      </Grid>
-      <Grid item md={6}>
-        <RightDetailCol itemDef={itemDef} itemId={itemId} />
-      </Grid>
-
-      {characters?.map((char) => (
-        <Grid item md={1}>
-          <Avatar
-            aria-label="recipe"
-            alt={char.name}
-            src={`https://image.eveonline.com/Character/${char.id}_64.jpg`}
-          />
+    <React.Fragment>
+      {showNext && (
+        <Button className={classes.next} onClick={onNext}>
+          Next
+        </Button>
+      )}
+      <Grid container className={classes.root}>
+        <Grid item md={6}>
+          <LeftDetailCol itemDef={itemDef} itemId={itemId} />
         </Grid>
-      ))}
-    </Grid>
+        <Grid item md={6}>
+          <RightDetailCol itemDef={itemDef} itemId={itemId} />
+        </Grid>
+
+        {characters?.map((char) => (
+          <Grid key={String(char.id)} item md={1}>
+            <Avatar
+              onClick={() => openItemWindow(char)}
+              aria-label="recipe"
+              alt={char.name}
+              src={`https://image.eveonline.com/Character/${char.id}_64.jpg`}
+            />
+          </Grid>
+        ))}
+      </Grid>
+    </React.Fragment>
   );
 };
 
 const LeftDetailCol: React.FC<{
   itemDef: IESIStatic;
   itemId: number;
-}> = ({ itemDef, itemId }) => (
-  <Grid container>
-    <Grid item md={2}>
-      <img src={`https://imageserver.eveonline.com/Type/${itemId}_64.png`} />
+}> = ({ itemDef, itemId }) => {
+  const tradeRoutes = useLiveQuery(() => db.tradeRoute.toArray(), []);
+  return (
+    <Grid container>
+      <Grid item md={2}>
+        <img src={`https://imageserver.eveonline.com/Type/${itemId}_64.png`} />
+      </Grid>
+      <Grid item md={10}>
+        <h2>{itemDef.typeName}</h2>
+        <ul>
+          <li>
+            Volume: {itemDef.volume} m3 ({itemDef.packagedVolume} m3 packaged)
+          </li>
+        </ul>
+      </Grid>
+      {tradeRoutes?.map((route, i) => (
+        <ItemTradeRoute
+          key={i}
+          route={route}
+          itemId={itemId}
+          itemDef={itemDef}
+        />
+      ))}
     </Grid>
-    <Grid item md={10}>
-      <h2>{itemDef.typeName}</h2>
-      <ul>
-        <li>Volume: {itemDef.volume} m3</li>
-      </ul>
-    </Grid>
-  </Grid>
-);
+  );
+};
+
+const ActiveOrder: React.FC<{ order: IOwnOrder }> = ({ order }) => {
+  const stationMap = useStationMap();
+  const bestSell = useBestSell(order.typeId, order.locationId);
+
+  const label = !bestSell
+    ? ''
+    : bestSell.price === order.price
+    ? '(top order)'
+    : `(lowest: ${millify(bestSell.price, { precision: 3 })})`;
+  return (
+    <TableRow key={order.orderId}>
+      <TableCell component="th" scope="row">
+        {stationMap[order.locationId]?.name}
+      </TableCell>
+      <TableCell align="right">
+        {(order.isBuyOrder ? '-' : '') + millify(order.price, { precision: 3 })}
+        <br />
+        {label}
+      </TableCell>
+      <TableCell>
+        {millify(order.volumeRemain)}/{millify(order.volumeTotal)}
+      </TableCell>
+    </TableRow>
+  );
+};
 
 const TransactionTable: React.FC<{
   transactions: IWalletEntry[];
@@ -133,6 +195,8 @@ const RightDetailCol: React.FC<{
 }> = ({ itemDef, itemId }) => {
   const stationMap = useStationMap();
 
+  //const
+
   const activeOrders = useLiveQuery(
     () =>
       db.ownOrders
@@ -147,7 +211,7 @@ const RightDetailCol: React.FC<{
     () =>
       db.walletTransactions
         .where(['typeId+isBuy+date'])
-        .between([itemId, 0, Dexie.minKey], [itemId, 0, Dexie.maxKey], false)
+        .between([itemId, 0, Dexie.minKey], [itemId, 0, Dexie.maxKey])
         .reverse()
         .limit(7)
         .toArray(),
@@ -158,7 +222,7 @@ const RightDetailCol: React.FC<{
     () =>
       db.walletTransactions
         .where(['typeId+isBuy+date'])
-        .between([itemId, 1, Dexie.minKey], [itemId, 1, Dexie.maxKey], true)
+        .between([itemId, 1, Dexie.minKey], [itemId, 1, Dexie.maxKey])
         .reverse()
         .limit(7)
         .toArray(),
@@ -168,21 +232,12 @@ const RightDetailCol: React.FC<{
   return (
     <div>
       <h2>Active orders: </h2>
+
       {activeOrders?.length > 0 ? (
         <Table size="small">
           <TableBody>
             {activeOrders?.map((order) => (
-              <TableRow key={order.orderId}>
-                <TableCell component="th" scope="row">
-                  {stationMap[order.locationId].name}
-                </TableCell>
-                <TableCell align="right">
-                  {order.isBuyOrder ? '-' : '' + millify(order.price)}
-                </TableCell>
-                <TableCell>
-                  {millify(order.volumeRemain)}/{millify(order.volumeTotal)}
-                </TableCell>
-              </TableRow>
+              <ActiveOrder key={order.orderId} order={order} />
             ))}
           </TableBody>
         </Table>

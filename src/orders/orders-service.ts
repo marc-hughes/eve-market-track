@@ -19,7 +19,7 @@ export const updateOwnOrders = async (
         orders.map<IOwnOrder>((o) => ({
           ...o,
           characterId: character.id,
-          isBuyOrder: !!o.is_buy_order,
+          isBuyOrder: o.is_buy_order ? 1 : 0, // need this to be a number so we can index it
           locationId: o.location_id,
           minVolume: o.min_volume,
           orderId: o.order_id,

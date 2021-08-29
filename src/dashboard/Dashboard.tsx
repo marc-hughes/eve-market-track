@@ -11,6 +11,7 @@ import ListItem from '@material-ui/core/ListItem';
 import SettingsIcon from '@material-ui/icons/Settings';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
+import RefreshIcon from '@material-ui/icons/Refresh';
 import InboxIcon from '@material-ui/icons/MoveToInbox';
 
 const drawerWidth = 240;
@@ -23,6 +24,8 @@ import { AuthContext } from '../auth';
 import { db } from '../data/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { AuthTokenInfo } from '../esi';
+import { DataSync } from '../DataSync';
+import { Import } from './Import';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -92,11 +95,26 @@ export const Dashboard = (props: any) => {
             <Characters />
             <Divider />
             <List>
-              <ListItem button>
+              <ListItem
+                button
+                selected={location.pathname === '/import'}
+                onClick={goToRoute('/import')}
+              >
                 <ListItemIcon>
                   <InboxIcon />
                 </ListItemIcon>
                 <ListItemText>Importing</ListItemText>
+              </ListItem>
+
+              <ListItem
+                button
+                selected={location.pathname === '/sync'}
+                onClick={goToRoute('/sync')}
+              >
+                <ListItemIcon>
+                  <RefreshIcon />
+                </ListItemIcon>
+                <ListItemText>Refresh Data</ListItemText>
               </ListItem>
 
               <ListItem
@@ -115,6 +133,8 @@ export const Dashboard = (props: any) => {
         <main className={classes.content}>
           <Toolbar />
           <Switch>
+            <Route path="/sync" component={DataSync} />
+            <Route path="/import" component={Import} />
             <Route path="/config" component={TradeConfig} />
             <Route path="/callback" component={AddCharacter} />
             <Route path="/character/:characterId" component={Character} />

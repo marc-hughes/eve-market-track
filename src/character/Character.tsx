@@ -17,6 +17,7 @@ import React from 'react';
 import { useRouteMatch } from 'react-router';
 
 import { db } from '../data/db';
+import Dexie from 'dexie';
 import { IChar } from './IChar';
 import { refreshWallet } from './wallet-service';
 import styled from '@emotion/styled';
@@ -77,11 +78,13 @@ export const Character: React.FC = () => {
   };
 
   const refresh = () => {
-    Promise.all([refreshWallet(character), updateOwnOrders(character)]).then(
-      () => {
-        setRefreshedOpen(true);
-      }
-    );
+    Promise.all([
+      refreshWallet(character),
+      updateOwnOrders(character),
+      updateInventory(character)
+    ]).then(() => {
+      setRefreshedOpen(true);
+    });
   };
 
   const { characterId } = match.params;
@@ -91,7 +94,27 @@ export const Character: React.FC = () => {
     [characterId]
   );
 
+  const orders = useLiveQuery(
+    () =>
+      character &&
+      db.ownOrders
+        .where(['characterId+issued'])
+        .between([character.id, Dexie.minKey], [character.id, Dexie.maxKey])
+        .reverse()
+        .toArray(),
+    [character]
+  );
+
   if (!character) return null;
+
+  const nextItem = () => {
+    if (!focusedItemId || !orders) return;
+    const index = orders.findIndex((o) => o.typeId === focusedItemId);
+    const next = orders[index + 1];
+    if (next) {
+      setFocusedItemId(next.typeId);
+    }
+  };
 
   return (
     <PageContainer>
@@ -127,7 +150,18 @@ export const Character: React.FC = () => {
             />
           )}
           {tab === 1 && (
-            <OrderLog onItemSelected={setFocusedItemId} character={character} />
+            <OrderLog
+              orders={orders}
+              onItemSelected={setFocusedItemId}
+              character={character}
+            />
+          )}
+
+          {tab === 2 && (
+            <h2>
+              Not implemented yet. Eventually, this will let you see your
+              inventory to figure out what should get listed.
+            </h2>
           )}
         </GridContainer>
       </Paper>
@@ -137,7 +171,11 @@ export const Character: React.FC = () => {
         open={!!focusedItemId}
         onClose={() => setFocusedItemId(null)}
       >
-        <ItemDetails itemId={focusedItemId} />
+        <ItemDetails
+          itemId={focusedItemId}
+          onNext={nextItem}
+          showNext={tab === 1}
+        />
       </Drawer>
 
       <Snackbar

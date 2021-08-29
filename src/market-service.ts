@@ -32,7 +32,8 @@ const getOrders = (auth: IAuth, structureId: number, page = 1) => {
 
 export const updateMarket = async (
   auth: IAuth,
-  structureId: number
+  structureId: number,
+  deleteOld = true
 ): Promise<any> => {
   const first = await getOrders(auth, structureId);
   const otherOrders = await Promise.all(
@@ -48,7 +49,7 @@ export const updateMarket = async (
     .map((p) => ({
       orderId: p.order_id,
       duration: p.duration,
-      isBuyOrder: p.is_buy_order,
+      isBuyOrder: p.is_buy_order ? 1 : 0,
       issued: p.issued,
       locationId: p.location_id,
       minVolume: p.min_volume,
@@ -60,9 +61,12 @@ export const updateMarket = async (
     }));
   try {
     console.info(`Retrieved ${allOrders.length} orders`);
-    await db.orders.where({ locationId: structureId }).delete();
-    console.info('Old orders deleted');
-    await db.orders.bulkPut(allOrders);
+    if (deleteOld) {
+      await db.orders.where({ locationId: structureId }).delete();
+      console.info('Old orders deleted');
+    }
+
+    await db.orders.bulkAdd(allOrders);
     console.info('New orders saved');
   } catch (e) {
     console.error(e);

@@ -24,7 +24,8 @@ function esiRequest<TRequest, TResponse>(
   path: string,
   params: Record<string, string>,
   base: string,
-  method: 'get' | 'post' = 'get'
+  method: 'get' | 'post' = 'get',
+  retry = true
 ): Promise<AxiosResponse<TResponse>> {
   return axios({
     method,
@@ -36,6 +37,7 @@ function esiRequest<TRequest, TResponse>(
   }).catch((e) => {
     if (
       e.isAxiosError &&
+      e.response &&
       e.response.status === 403 &&
       e.response.data.error === 'token is expired'
     ) {
@@ -62,6 +64,11 @@ function esiRequest<TRequest, TResponse>(
           // Retry the original request with new auth data.
           return esiRequest<TRequest, TResponse>(newAuth, path, params, base);
         });
+    }
+
+    if (retry) {
+      console.warn('Retyring ESI request');
+      return esiRequest(auth, path, params, base, method, false);
     }
 
     return Promise.reject(e);

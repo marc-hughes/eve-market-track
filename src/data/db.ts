@@ -22,7 +22,8 @@ class AppDB extends Dexie {
       stations: 'id,name,ownerId,solarSystemId,typeId',
       walletTransactions:
         'transactionId,[characterId+date],[typeId+isBuy+date]',
-      orders: 'orderId,locationId,typeId',
+      orders:
+        'orderId,locationId,typeId,[typeId+locationId],[typeId+locationId+isBuyOrder+price]',
       ownOrders: 'orderId,locationId,[characterId+issued],[typeId+issued]'
     });
 

@@ -1,5 +1,4 @@
 import React from 'react';
-import Dexie from 'dexie';
 
 import { useLiveQuery } from 'dexie-react-hooks';
 
@@ -16,24 +15,16 @@ import { esiOpenMarket } from '../esi';
 import { IChar } from '../character/IChar';
 import { db } from '../data/db';
 import { useStationMap } from '../station-service';
+import { IOwnOrder } from './orders';
 
 type ItemSelectedCallback = (itemId: number) => void;
 
 export const OrderLog: React.FC<{
   character: IChar;
   onItemSelected: ItemSelectedCallback;
-}> = ({ character, onItemSelected }) => {
+  orders: IOwnOrder[];
+}> = ({ character, onItemSelected, orders }) => {
   const stationMap = useStationMap();
-
-  const orders = useLiveQuery(
-    () =>
-      db.ownOrders
-        .where(['characterId+issued'])
-        .between([character.id, Dexie.minKey], [character.id, Dexie.maxKey])
-        .reverse()
-        .toArray(),
-    [character]
-  );
 
   const onCellDoubleClick = (params: GridValueGetterParams) => {
     if (params.field === 'typeId') {
