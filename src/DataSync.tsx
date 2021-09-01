@@ -58,7 +58,8 @@ export const DataSync: React.FC<any> = () => {
   const refresh = async () => {
     setSyncing(true);
     for (const character of characters) {
-      await Promise.all([refreshWallet(character), updateOwnOrders(character)]);
+      await refreshWallet(character);
+      await updateOwnOrders(character);
       await updateInventory(character);
       setSyncMap((syncMap) => ({ ...syncMap, [character.id]: true }));
     }

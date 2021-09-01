@@ -3,8 +3,9 @@ import { ITradeRoute } from '../config/ITradeRoute';
 import { IChar } from '../character/IChar';
 import { IStation } from '../config/IStation';
 import { IWalletEntry } from '../character/IWalletEntry';
-import { IOrders, IOwnOrder } from '../orders/orders';
+import { IOrders, IOwnOrder, IOwnOrderHistory } from '../orders/orders';
 import { IInventory } from '../inventory/inventory';
+import { IItemNotes } from '../items/ItemNotes';
 
 class AppDB extends Dexie {
   characters: Dexie.Table<IChar, string>;
@@ -14,6 +15,8 @@ class AppDB extends Dexie {
   orders: Dexie.Table<IOrders, number>;
   ownOrders: Dexie.Table<IOwnOrder, number>;
   inventory: Dexie.Table<IInventory, number>;
+  orderHistory: Dexie.Table<IOwnOrderHistory, number>;
+  itemNotes: Dexie.Table<IItemNotes, number>;
 
   constructor() {
     super('eve-market');
@@ -26,24 +29,16 @@ class AppDB extends Dexie {
         'transactionId,[characterId+date],[typeId+isBuy+date]',
       orders:
         'orderId,locationId,typeId,[typeId+locationId],[typeId+locationId+isBuyOrder+price]',
-      ownOrders: 'orderId,locationId,[characterId+issued],[typeId+issued]'
+      ownOrders: 'orderId,locationId,[characterId+issued],[typeId+issued]',
+      inventory:
+        'itemId,locationId,characterId,[characterId+locationId],typeId',
+      orderHistory: 'orderId,locationId,[characterId+issued],[typeId+issued]'
     });
 
     this.version(2).stores({
-      inventory: 'itemId,locationId'
+      itemNotes: 'itemId'
     });
 
-    this.version(3).stores({
-      inventory: 'itemId,locationId,[characterId+locationId]'
-    });
-
-    this.version(4).stores({
-      inventory: 'itemId,locationId,characterId,[characterId+locationId]'
-    });
-
-    this.version(5).stores({
-      inventory: 'itemId,locationId,characterId,[characterId+locationId],typeId'
-    });
     // The following line is needed if your typescript
     // is compiled using babel instead of tsc:
     //this.characters = this.table('characters');

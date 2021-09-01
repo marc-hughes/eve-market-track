@@ -28,6 +28,7 @@ import { OrderLog } from '../orders/OrderLog';
 import { ItemDetails } from '../items/ItemDetails';
 import { updateInventory } from '../inventory/inventory-service';
 import { InventoryLog } from '../inventory/InventoryLog';
+import { OrderHistoryLog } from '../orders/OrderHistoryLog';
 
 const PageContainer = styled.div({
   display: 'flex',
@@ -129,6 +130,7 @@ export const Character: React.FC = () => {
               <Tab label="Orders" />
               <Tab label="Inventory" />
               <Tab label="Transactions" />
+              <Tab label="Completed Orders" />
             </Tabs>
             <Button onClick={refresh} variant="contained" color="secondary">
               Refresh
@@ -154,6 +156,13 @@ export const Character: React.FC = () => {
           )}
           {tab === 2 && (
             <WalletLog
+              onItemSelected={setFocusedItemId}
+              character={character}
+            />
+          )}
+          {tab === 3 && (
+            <OrderHistoryLog
+              onItemListChanged={setItemList}
               onItemSelected={setFocusedItemId}
               character={character}
             />

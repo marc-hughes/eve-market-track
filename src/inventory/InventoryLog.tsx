@@ -1,6 +1,6 @@
 import React, { ChangeEvent, useEffect, useState } from 'react';
 import Dexie from 'dexie';
-
+import FlagIcon from '@material-ui/icons/Flag';
 import { useLiveQuery } from 'dexie-react-hooks';
 
 import {
@@ -18,6 +18,7 @@ import { useStationMap, useStations } from '../station-service';
 import { IStation } from '../config/IStation';
 import { StationInput } from '../config/StationSelect';
 import { makeStyles } from '@material-ui/core';
+import { IItemNotes } from '../items/ItemNotes';
 
 const useStyle = makeStyles({
   stationSelect: {
@@ -39,6 +40,29 @@ export const InventoryLog: React.FC<{
   const [station, setStation] = useState(null);
   const classes = useStyle();
 
+  useEffect(() => {
+    if (station || !stations) {
+      return;
+    }
+    const activeStation = window.localStorage.getItem('activeStation');
+    const last = stations.find((s) => s.id === parseInt(activeStation, 10));
+    if (last) {
+      setStation(last);
+    } else if (stations.length > 0) {
+      setStation(stations[0]);
+    }
+  }, [stations]);
+
+  const noteMap = useLiveQuery(() =>
+    db.itemNotes.toArray().then(
+      (notes) =>
+        notes?.reduce<Record<string, IItemNotes>>((map, current) => {
+          map[current.itemId] = current;
+          return map;
+        }, {}) || {}
+    )
+  );
+
   const inventory = useLiveQuery(
     () =>
       db.inventory
@@ -47,6 +71,11 @@ export const InventoryLog: React.FC<{
         .toArray(),
     [character]
   );
+
+  const onPickStation = (event: ChangeEvent, value: IStation) => {
+    window.localStorage.setItem('activeStation', String(value.id));
+    setStation(value);
+  };
 
   useEffect(() => {
     onItemListChanged &&
@@ -70,7 +99,7 @@ export const InventoryLog: React.FC<{
         <StationInput
           className={classes.stationSelect}
           value={station}
-          onChange={(event: ChangeEvent, value: IStation) => setStation(value)}
+          onChange={onPickStation}
           label="Station"
           stations={stations}
         />
@@ -87,6 +116,9 @@ export const InventoryLog: React.FC<{
         <React.Fragment>
           <ItemImage typeId={params.row.typeId} />
           {getItem(params.row.typeId)?.typeName}
+          {noteMap[params.row.typeId] && (
+            <FlagIcon style={{ color: noteMap[params.row.typeId].color }} />
+          )}
         </React.Fragment>
       )
     },
@@ -97,6 +129,8 @@ export const InventoryLog: React.FC<{
   return (
     <React.Fragment>
       <DataGrid
+        rowHeight={30}
+        disableColumnMenu={true}
         onRowClick={(params) => onItemSelected(params.row.typeId)}
         columns={columns}
         rows={inventory.filter((i) => i.locationId === station?.id)}

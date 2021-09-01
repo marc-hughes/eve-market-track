@@ -13,6 +13,7 @@ import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 import RefreshIcon from '@material-ui/icons/Refresh';
 import InboxIcon from '@material-ui/icons/MoveToInbox';
+import FlagIcon from '@material-ui/icons/Flag';
 
 const drawerWidth = 240;
 import { Characters } from '../character/Characters';
@@ -25,7 +26,8 @@ import { db } from '../data/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { AuthTokenInfo } from '../esi';
 import { DataSync } from '../DataSync';
-import { Import } from './Import';
+import { Import } from '../import/Import';
+import { FlaggedLog } from '../items/FlaggedLog';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -39,6 +41,9 @@ const useStyles = makeStyles((theme: Theme) =>
     drawer: {
       width: drawerWidth,
       flexShrink: 0
+    },
+    title: {
+      flexGrow: 1
     },
     drawerPaper: {
       width: drawerWidth
@@ -78,7 +83,7 @@ export const Dashboard = (props: any) => {
       <div className={classes.root}>
         <AppBar position="fixed" className={classes.appBar}>
           <Toolbar>
-            <Typography variant="h6" noWrap>
+            <Typography variant="h6" noWrap className={classes.title}>
               Market Tracker
             </Typography>
           </Toolbar>
@@ -95,6 +100,17 @@ export const Dashboard = (props: any) => {
             <Characters />
             <Divider />
             <List>
+              <ListItem
+                button
+                selected={location.pathname === '/flagged'}
+                onClick={goToRoute('/flagged')}
+              >
+                <ListItemIcon>
+                  <FlagIcon />
+                </ListItemIcon>
+                <ListItemText>Flagged Items</ListItemText>
+              </ListItem>
+
               <ListItem
                 button
                 selected={location.pathname === '/import'}
@@ -136,6 +152,7 @@ export const Dashboard = (props: any) => {
             <Route path="/sync" component={DataSync} />
             <Route path="/import" component={Import} />
             <Route path="/config" component={TradeConfig} />
+            <Route path="/flagged" component={FlaggedLog} />
             <Route path="/callback" component={AddCharacter} />
             <Route path="/character/:characterId" component={Character} />
             <Route component={Intro} />

@@ -1,5 +1,6 @@
 import {
   Button,
+  Card,
   createStyles,
   Divider,
   Grid,
@@ -11,6 +12,8 @@ import { ITradeRoute } from '../config/ITradeRoute';
 import { useBestSell } from '../orders/orders';
 import { useStationMap } from '../station-service';
 import { IESIStatic } from './esi-static';
+import { PriceHistoryChart } from './PriceHistoryChart';
+// import { OrderChart } from './OrderChart';
 
 const PriceDetailDisplay: React.FC<{
   buyPrice: number;
@@ -50,6 +53,12 @@ const PriceDetailDisplay: React.FC<{
 
 const useStyles = makeStyles(() =>
   createStyles({
+    routeCard: {
+      flexGrow: 1,
+      padding: 10,
+      marginBottom: 20,
+      marginRight: 20
+    },
     priceList: {
       '& li': {
         paddingBottom: 15
@@ -80,49 +89,65 @@ export const ItemTradeRoute: React.FC<{
     (buyPrice + shipping) / (1 - route.tax / 100 - route.broker / 100)
   );
 
+  if (!route) return null;
+
   return (
-    <Grid container>
-      <Grid item md={12}>
-        <Divider />
+    <Card className={classes.routeCard}>
+      <Grid container>
+        <Grid item md={12}>
+          {stationMap[route.fromStation]?.name} (
+          <b>{buyPrice === 0 ? 'Not Found' : millify(buyPrice)})</b>
+          <br />
+          {stationMap[route.toStation]?.name} (
+          <b>{sellPrice === 0 ? 'Not Found' : millify(sellInfo.price)})</b>
+        </Grid>
+        <Grid item md={6}>
+          <ul className={classes.priceList}>
+            <li>
+              Sell@
+              <PriceDetailDisplay
+                buyPrice={buyPrice}
+                sellPrice={sellPrice}
+                shipping={shipping}
+                route={route}
+              />
+            </li>
+            <li>
+              Plus 20% Price:
+              <PriceDetailDisplay
+                buyPrice={buyPrice}
+                sellPrice={plus20}
+                shipping={shipping}
+                route={route}
+              />
+            </li>
+            <li>
+              Break even price:
+              <PriceDetailDisplay
+                buyPrice={buyPrice}
+                sellPrice={breakEven}
+                shipping={shipping}
+                route={route}
+              />
+            </li>
+          </ul>
+        </Grid>
       </Grid>
-      <Grid item md={12}>
-        {stationMap[route.fromStation]?.name} (
-        <b>{buyPrice === 0 ? 'Not Found' : millify(buyPrice)})</b>
-        <br />
-        {stationMap[route.toStation]?.name} (
-        <b>{sellPrice === 0 ? 'Not Found' : millify(sellInfo.price)})</b>
-      </Grid>
-      <Grid item md={6}>
-        <ul className={classes.priceList}>
-          <li>
-            Sell@
-            <PriceDetailDisplay
-              buyPrice={buyPrice}
-              sellPrice={sellPrice}
-              shipping={shipping}
-              route={route}
-            />
-          </li>
-          <li>
-            Plus 20% Price:
-            <PriceDetailDisplay
-              buyPrice={buyPrice}
-              sellPrice={plus20}
-              shipping={shipping}
-              route={route}
-            />
-          </li>
-          <li>
-            Break even price:
-            <PriceDetailDisplay
-              buyPrice={buyPrice}
-              sellPrice={breakEven}
-              shipping={shipping}
-              route={route}
-            />
-          </li>
-        </ul>
-      </Grid>
-    </Grid>
+
+      <PriceHistoryChart
+        label={stationMap[route.fromStation]?.name}
+        itemId={itemId}
+        locationId={route.fromStation}
+      />
+      <PriceHistoryChart
+        label={stationMap[route.toStation]?.name}
+        itemId={itemId}
+        locationId={route.toStation}
+      />
+
+      {/* This was meant to show the buy/sell spread, but
+          it was just too hard to read.
+          <OrderChart itemId={itemId} locationId={route.toStation} /> */}
+    </Card>
   );
 };

@@ -236,6 +236,14 @@ export const esiMarketOwnOrders = genRequest<
   IESIMarketOwnOrderResponse[]
 >('/characters/:characterId/orders/');
 
+export interface IESIMarketOrderHistory extends IESIMarketOwnOrderResponse {
+  state: string;
+}
+export const esiMarketOrderHistory = genRequest<
+  NoRequestBody,
+  IESIMarketOrderHistory[]
+>('/characters/:characterId/orders/history/');
+
 export interface IESICharacterAssets {
   item_id: number;
   location_id: number;
@@ -249,3 +257,18 @@ export const esiCharacterAssets = genRequest<
   NoRequestBody,
   IESICharacterAssets[]
 >('/characters/:characterId/assets/');
+
+export interface IESIMarketStats {
+  average: number;
+  date: string;
+  lowest: number;
+  order_count: number;
+  volume: number;
+}
+export const esiMarketStats = genRequest<NoRequestBody, IESIMarketStats[]>(
+  '/markets/:regionId/history/'
+);
+
+export const esiMarketTypes = genRequest<NoRequestBody, number[]>(
+  '/markets/:regionId/types/'
+);

@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import Dexie from 'dexie';
 import { useLiveQuery } from 'dexie-react-hooks';
 import FlagIcon from '@material-ui/icons/Flag';
-
 import {
   DataGrid,
   GridColDef,
@@ -16,33 +15,22 @@ import { esiOpenMarket } from '../esi';
 import { IChar } from '../character/IChar';
 import { db } from '../data/db';
 import { useStationMap } from '../station-service';
-import { IOwnOrder } from './orders';
 import { IItemNotes } from '../items/ItemNotes';
 
 type ItemSelectedCallback = (itemId: number) => void;
 type ItemListCallback = (itemId: number[]) => void;
 
-export const OrderLog: React.FC<{
+export const OrderHistoryLog: React.FC<{
   character: IChar;
   onItemSelected: ItemSelectedCallback;
   onItemListChanged: ItemListCallback;
 }> = ({ character, onItemSelected, onItemListChanged }) => {
   const stationMap = useStationMap();
-
   const orders = useLiveQuery(
     () =>
       character &&
-      db.ownOrders
-        .where(['characterId+issued'])
-        .between([character.id, Dexie.minKey], [character.id, Dexie.maxKey])
-        .reverse()
-        .toArray(),
+      db.orderHistory.where({ characterId: character.id }).reverse().toArray(),
     [character]
-  );
-
-  useEffect(
-    () => orders && onItemListChanged(orders.map((o) => o.typeId)),
-    [orders]
   );
 
   const noteMap = useLiveQuery(() =>
@@ -54,6 +42,11 @@ export const OrderLog: React.FC<{
     )
   );
 
+  useEffect(
+    () => orders && onItemListChanged(orders.map((o) => o.typeId)),
+    [orders]
+  );
+
   if (!character || !orders) return null;
 
   const columns: GridColDef[] = [
@@ -62,10 +55,12 @@ export const OrderLog: React.FC<{
     {
       field: 'locationId',
       headerName: 'locationId',
-      width: 110,
+      width: 220,
       valueFormatter: (params: GridValueGetterParams) =>
         stationMap[params.row.locationId]?.name
     },
+
+    { field: 'state', headerName: 'State', width: 100 },
 
     {
       field: 'typeId',
@@ -96,7 +91,7 @@ export const OrderLog: React.FC<{
     {
       field: 'volumeRemain',
       headerName: 'qty',
-      width: 100,
+      width: 150,
       valueFormatter: (params: GridValueGetterParams) =>
         `${millify(params.row.volumeRemain, {
           precision: 2
@@ -104,18 +99,6 @@ export const OrderLog: React.FC<{
       ${millify(params.row.volumeTotal, {
         precision: 2
       })}`
-    },
-
-    {
-      field: 'value',
-      headerName: 'value',
-      width: 100,
-      valueGetter: (params: GridValueGetterParams) =>
-        params.row.price * params.row.volumeRemain,
-      valueFormatter: (params: GridValueGetterParams) =>
-        millify(params.row.price * params.row.volumeRemain, {
-          precision: 2
-        })
     }
   ];
 

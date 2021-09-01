@@ -1,6 +1,11 @@
 import { db } from './data/db';
 
-import { esiMarketOrders, esiRegionMarketOrders, IAuth } from './esi';
+import {
+  esiMarketOrders,
+  esiMarketStats,
+  esiRegionMarketOrders,
+  IAuth
+} from './esi';
 import { systems } from './systems';
 
 const getOrders = (auth: IAuth, structureId: number, page = 1) => {

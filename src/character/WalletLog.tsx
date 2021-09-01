@@ -2,10 +2,11 @@ import React from 'react';
 import Dexie from 'dexie';
 
 import { useLiveQuery } from 'dexie-react-hooks';
-
+import FlagIcon from '@material-ui/icons/Flag';
 import {
   DataGrid,
   GridColDef,
+  GridRowParams,
   GridValueGetterParams
 } from '@material-ui/data-grid';
 import millify from 'millify';
@@ -17,14 +18,33 @@ import { IStation } from '../config/IStation';
 import { IChar } from './IChar';
 import { db } from '../data/db';
 import { useStationMap } from '../station-service';
+import { IItemNotes } from '../items/ItemNotes';
+import { createStyles } from '@material-ui/core';
+import { makeStyles } from '@material-ui/styles';
 
 type ItemSelectedCallback = (itemId: number) => void;
+
+const useStyles = makeStyles(() =>
+  createStyles({
+    compactRow: {}
+  })
+);
 
 export const WalletLog: React.FC<{
   character: IChar;
   onItemSelected: ItemSelectedCallback;
 }> = ({ character, onItemSelected }) => {
   const stationMap = useStationMap();
+  const classes = useStyles();
+
+  const noteMap = useLiveQuery(() =>
+    db.itemNotes.toArray().then((notes) =>
+      notes.reduce<Record<string, IItemNotes>>((map, current) => {
+        map[current.itemId] = current;
+        return map;
+      }, {})
+    )
+  );
 
   const transactions = useLiveQuery(
     () =>
@@ -63,6 +83,9 @@ export const WalletLog: React.FC<{
         <React.Fragment>
           <ItemImage typeId={params.row.typeId} />
           {getItem(params.row.typeId)?.typeName}
+          {noteMap[params.row.typeId] && (
+            <FlagIcon style={{ color: noteMap[params.row.typeId].color }} />
+          )}
         </React.Fragment>
       )
     },
@@ -94,6 +117,8 @@ export const WalletLog: React.FC<{
 
   return (
     <DataGrid
+      rowHeight={30}
+      disableColumnMenu={true}
       onRowClick={(params) => onItemSelected(params.row.typeId)}
       columns={columns}
       rows={transactions}

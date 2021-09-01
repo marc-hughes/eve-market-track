@@ -12,7 +12,8 @@ export const StationInput: React.FC<{
 }> = ({ stations, label, value, onChange, className = undefined }) => (
   <Autocomplete
     id="combo-box-demo"
-    options={stations}
+    options={[...stations].sort((a, b) => a.name.localeCompare(b.name))}
+    disableClearable={true}
     className={className}
     value={value}
     onChange={onChange}

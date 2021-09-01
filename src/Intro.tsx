@@ -7,8 +7,15 @@ export const Intro = () => {
   if (item) {
     return (
       <div>
-        <ItemImage typeId="21551" />
-        {JSON.stringify(item)}
+        <h1>Welcome to the Eve Market Tracker (name TBD)</h1>
+        <p>
+          To get started:
+          <ul>
+            <li>Add your market trading characters on the left</li>
+            <li>Create a trade route in the trading config</li>
+            <li>Refresh Data</li>
+          </ul>
+        </p>
       </div>
     );
   }

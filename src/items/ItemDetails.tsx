@@ -1,7 +1,9 @@
 import {
   Avatar,
   Button,
+  Card,
   createStyles,
+  Fab,
   Grid,
   makeStyles,
   Table,
@@ -18,13 +20,16 @@ import { db } from '../data/db';
 import { getItem, IESIStatic } from './esi-static';
 import millify from 'millify';
 import { useStationMap } from '../station-service';
+
 import { IWalletEntry } from '../character/IWalletEntry';
 import { IStation } from '../config/IStation';
 import { ItemTradeRoute } from './ItemTradeRoute';
 import { esiOpenMarket } from '../esi';
-import { IOwnOrder, useBestSell } from '../orders/orders';
+import { IOrders, IOwnOrder, useBestSell } from '../orders/orders';
 import { IInventory } from '../inventory/inventory';
 import { useCharacters } from '../character/character-service';
+import { ColorFlag } from './ColorFlag';
+import { ItemColorFlag } from './ItemColorFlag';
 
 /*
     [img]
@@ -61,6 +66,10 @@ const useStyles = makeStyles(() =>
       position: 'fixed',
       bottom: 5,
       right: 10
+    },
+    detailCard: {
+      marginBottom: 15,
+      padding: 10
     }
   })
 );
@@ -114,13 +123,21 @@ const LeftDetailCol: React.FC<{
   itemId: number;
 }> = ({ itemDef, itemId }) => {
   const tradeRoutes = useLiveQuery(() => db.tradeRoute.toArray(), []);
+
   return (
     <Grid container>
       <Grid item md={2}>
         <img src={`https://imageserver.eveonline.com/Type/${itemId}_64.png`} />
       </Grid>
       <Grid item md={10}>
-        <h2>{itemDef.typeName}</h2>
+        <h2>
+          <Button
+            onClick={() => navigator.clipboard.writeText(itemDef.typeName)}
+          >
+            {itemDef.typeName}
+          </Button>
+          <ItemColorFlag itemId={itemId} />
+        </h2>
         <ul>
           <li>
             Volume: {itemDef.volume} m3 ({itemDef.packagedVolume} m3 packaged)
@@ -145,7 +162,7 @@ const ActiveOrder: React.FC<{ order: IOwnOrder }> = ({ order }) => {
 
   const label = !bestSell
     ? ''
-    : bestSell.price === order.price
+    : bestSell.price >= order.price
     ? '(top order)'
     : `(lowest: ${millify(bestSell.price, { precision: 3 })})`;
   return (
@@ -220,12 +237,40 @@ const TransactionTable: React.FC<{
   );
 };
 
+const OrdersTable: React.FC<{
+  orders: IOrders[];
+  stationMap: Record<string, IStation>;
+}> = ({ orders, stationMap }) => {
+  return orders?.length > 0 ? (
+    <Table size="small">
+      <TableBody>
+        {orders?.map((order) => (
+          <TableRow key={order.orderId}>
+            <TableCell style={{ width: 250 }} component="th" scope="row">
+              {stationMap[order.locationId].name}
+            </TableCell>
+            <TableCell>{order.issued}</TableCell>
+            <TableCell align="right">
+              {(order.isBuyOrder ? '-' : '') + millify(order.price)}
+            </TableCell>
+            <TableCell>
+              {millify(order.volumeRemain)}/{millify(order.volumeTotal)}
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  ) : (
+    <span>No Recent order</span>
+  );
+};
+
 const RightDetailCol: React.FC<{
   itemDef: IESIStatic;
   itemId: number;
 }> = ({ itemDef, itemId }) => {
   const stationMap = useStationMap();
-
+  const classes = useStyles();
   //const
 
   const activeOrders = useLiveQuery(
@@ -260,6 +305,17 @@ const RightDetailCol: React.FC<{
     [itemId]
   );
 
+  const completedOrders = useLiveQuery(
+    () =>
+      db.orderHistory
+        .where(['typeId+issued'])
+        .between([itemId, Dexie.minKey], [itemId, Dexie.maxKey])
+        .reverse()
+        .limit(3)
+        .toArray(),
+    [itemId]
+  );
+
   const inventory = useLiveQuery(
     () => db.inventory.where('typeId').equals(itemId).toArray(),
     [itemId]
@@ -267,27 +323,39 @@ const RightDetailCol: React.FC<{
 
   return (
     <div>
-      <h2>Active orders: </h2>
+      <Card className={classes.detailCard}>
+        <h2>Active orders: </h2>
 
-      {activeOrders?.length > 0 ? (
-        <Table size="small">
-          <TableBody>
-            {activeOrders?.map((order) => (
-              <ActiveOrder key={order.orderId} order={order} />
-            ))}
-          </TableBody>
-        </Table>
-      ) : (
-        'No Active Orders'
-      )}
+        {activeOrders?.length > 0 ? (
+          <Table size="small">
+            <TableBody>
+              {activeOrders?.map((order) => (
+                <ActiveOrder key={order.orderId} order={order} />
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          'No Active Orders'
+        )}
+      </Card>
 
       {/* <h2>Available Inventory: </h2> */}
-      <h2>Recent purchases: </h2>
-      <TransactionTable transactions={recentBuys} stationMap={stationMap} />
-      <h2>Recent sales:</h2>
-      <TransactionTable transactions={recentSales} stationMap={stationMap} />
-      <h2>Inventory</h2>
-      <InventoryTable inventory={inventory} stationMap={stationMap} />
+      <Card className={classes.detailCard}>
+        <h2>Recent purchases: </h2>
+        <TransactionTable transactions={recentBuys} stationMap={stationMap} />
+      </Card>
+      <Card className={classes.detailCard}>
+        <h2>Recent sales:</h2>
+        <TransactionTable transactions={recentSales} stationMap={stationMap} />
+      </Card>
+      <Card className={classes.detailCard}>
+        <h2>Inventory</h2>
+        <InventoryTable inventory={inventory} stationMap={stationMap} />
+      </Card>
+      <Card className={classes.detailCard}>
+        <h2>Completed Orders</h2>
+        <OrdersTable orders={completedOrders} stationMap={stationMap} />
+      </Card>
     </div>
   );
 };

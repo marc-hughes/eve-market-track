@@ -23,16 +23,22 @@ export interface IOwnOrder extends IOrders {
   regionId: number;
 }
 
+export interface IOwnOrderHistory extends IOwnOrder {
+  state: string;
+}
+
+export const getBestSell = (itemId: number, locationId: number) =>
+  db.orders
+    .where(['typeId+locationId+isBuyOrder+price'])
+    .between(
+      [itemId, locationId, 0, Dexie.minKey],
+      [itemId, locationId, 0, Dexie.maxKey]
+    )
+    .first();
+
 export const useBestSell = (itemId: number, locationId: number) => {
   return useLiveQuery(
-    () =>
-      db.orders
-        .where(['typeId+locationId+isBuyOrder+price'])
-        .between(
-          [itemId, locationId, 0, Dexie.minKey],
-          [itemId, locationId, 0, Dexie.maxKey]
-        )
-        .first(),
+    () => getBestSell(itemId, locationId),
     [itemId, locationId]
   );
 };
