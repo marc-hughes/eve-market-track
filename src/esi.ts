@@ -71,6 +71,8 @@ function esiRequest<TRequest, TResponse>(
       return esiRequest(auth, path, params, base, method, false);
     }
 
+    // TODO: log errors
+
     return Promise.reject(e);
   });
 }

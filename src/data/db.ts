@@ -6,8 +6,10 @@ import { IWalletEntry } from '../character/IWalletEntry';
 import { IOrders, IOwnOrder, IOwnOrderHistory } from '../orders/orders';
 import { IInventory } from '../inventory/inventory';
 import { IItemNotes } from '../items/ItemNotes';
+import { IItemStat } from '../items/itemstat';
 
 class AppDB extends Dexie {
+  itemStat: Dexie.Table<IItemStat, number>;
   characters: Dexie.Table<IChar, string>;
   tradeRoute: Dexie.Table<ITradeRoute, number>;
   stations: Dexie.Table<IStation, number>;
@@ -37,6 +39,15 @@ class AppDB extends Dexie {
 
     this.version(2).stores({
       itemNotes: 'itemId'
+    });
+
+    this.version(3).stores({
+      itemStat: '[itemId+regionId]'
+    });
+
+    this.version(4).stores({
+      ownOrders:
+        'orderId,locationId,[characterId+issued],[typeId+issued],[typeId+locationId]'
     });
 
     // The following line is needed if your typescript

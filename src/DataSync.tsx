@@ -57,6 +57,8 @@ export const DataSync: React.FC<any> = () => {
 
   const refresh = async () => {
     setSyncing(true);
+    // TODO: (Refactor) Generalize data syncing and re-use in different parts of app (like the character screen)
+    // TODO: Error Handling
     for (const character of characters) {
       await refreshWallet(character);
       await updateOwnOrders(character);

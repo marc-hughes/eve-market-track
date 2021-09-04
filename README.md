@@ -1,13 +1,14 @@
 # eve-market-track
 
-Use cases:
+Problems this app might solve:
 
-- For a character:
-  - View wallet transaction log
-  - View active orders
-- Trade Route Based:
-  - Item recommendations
-  - View list of items bought/sold with
-    - latest buy/sell/profit data
-    - profit data for last XX days
-    - current market data in source/target
+- Efficiently keeping track of a large number of orders
+  - Knowing when to:
+    - relist
+    - buy/import more
+    - leave alone
+
+Optimized for moving lots of small orders for modest margins.
+
+Doesn't deal with buy orders well yet.
+Goonmetrics is still better for finding deals.

@@ -53,6 +53,7 @@ export const InventoryLog: React.FC<{
     }
   }, [stations]);
 
+  // TODO: (Refactor) extract to hook
   const noteMap = useLiveQuery(() =>
     db.itemNotes.toArray().then(
       (notes) =>
@@ -63,6 +64,7 @@ export const InventoryLog: React.FC<{
     )
   );
 
+  // TODO: (Refactor) extract to hook
   const inventory = useLiveQuery(
     () =>
       db.inventory

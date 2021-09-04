@@ -6,21 +6,19 @@ import FlagIcon from '@material-ui/icons/Flag';
 import {
   DataGrid,
   GridColDef,
-  GridRowParams,
   GridValueGetterParams
 } from '@material-ui/data-grid';
 import millify from 'millify';
 
 import { getItem } from '../items/esi-static';
 import { ItemImage } from '../items/ItemImage';
-import { esiOpenMarket } from '../esi';
-import { IStation } from '../config/IStation';
 import { IChar } from './IChar';
 import { db } from '../data/db';
 import { useStationMap } from '../station-service';
 import { IItemNotes } from '../items/ItemNotes';
 import { createStyles } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
+import moment from 'moment';
 
 type ItemSelectedCallback = (itemId: number) => void;
 
@@ -37,6 +35,7 @@ export const WalletLog: React.FC<{
   const stationMap = useStationMap();
   const classes = useStyles();
 
+  // TODO: (Refactor) Create hook to get the notemap
   const noteMap = useLiveQuery(() =>
     db.itemNotes.toArray().then((notes) =>
       notes.reduce<Record<string, IItemNotes>>((map, current) => {
@@ -46,6 +45,7 @@ export const WalletLog: React.FC<{
     )
   );
 
+  // TODO: (Refactor) Create hook to get transactions
   const transactions = useLiveQuery(
     () =>
       db.walletTransactions
@@ -56,17 +56,16 @@ export const WalletLog: React.FC<{
     [character]
   );
 
-  // const onCellDoubleClick = (params: GridValueGetterParams) => {
-  //   if (params.field === 'typeId') {
-  //     esiOpenMarket(character, { type_id: params.row.typeId });
-  //   }
-  // };
-
   if (!character || !transactions) return null;
 
   const columns: GridColDef[] = [
-    { field: 'date', headerName: 'date', width: 180 },
-    // { field: 'isBuy', headerName: 'isBuy', width: 90 },
+    {
+      field: 'date',
+      headerName: 'date',
+      width: 180,
+      valueFormatter: (params: GridValueGetterParams) =>
+        moment(params.row.date).format('yyyy-MM-DD HH:mm')
+    },
     {
       field: 'locationId',
       headerName: 'locationId',

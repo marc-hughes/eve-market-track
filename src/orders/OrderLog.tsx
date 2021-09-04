@@ -18,6 +18,7 @@ import { db } from '../data/db';
 import { useStationMap } from '../station-service';
 import { IOwnOrder } from './orders';
 import { IItemNotes } from '../items/ItemNotes';
+import moment from 'moment';
 
 type ItemSelectedCallback = (itemId: number) => void;
 type ItemListCallback = (itemId: number[]) => void;
@@ -29,6 +30,7 @@ export const OrderLog: React.FC<{
 }> = ({ character, onItemSelected, onItemListChanged }) => {
   const stationMap = useStationMap();
 
+  // TODO: (Refactor) extract to hook
   const orders = useLiveQuery(
     () =>
       character &&
@@ -45,6 +47,7 @@ export const OrderLog: React.FC<{
     [orders]
   );
 
+  // TODO: (Refactor) extract to hook
   const noteMap = useLiveQuery(() =>
     db.itemNotes.toArray().then((notes) =>
       notes.reduce<Record<string, IItemNotes>>((map, current) => {
@@ -56,9 +59,8 @@ export const OrderLog: React.FC<{
 
   if (!character || !orders) return null;
 
+  // TODO: (Refactor) useMemo the column defs
   const columns: GridColDef[] = [
-    // { field: 'issued', headerName: 'date', width: 180 },
-    // { field: 'isBuy', headerName: 'isBuy', width: 90 },
     {
       field: 'locationId',
       headerName: 'locationId',
@@ -116,6 +118,13 @@ export const OrderLog: React.FC<{
         millify(params.row.price * params.row.volumeRemain, {
           precision: 2
         })
+    },
+    {
+      field: 'issued',
+      headerName: 'Issued',
+      width: 200,
+      valueFormatter: (params: GridValueGetterParams) =>
+        moment(params.row.issued).format('yyyy-MM-DD HH:mm')
     }
   ];
 

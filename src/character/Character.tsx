@@ -30,6 +30,7 @@ import { updateInventory } from '../inventory/inventory-service';
 import { InventoryLog } from '../inventory/InventoryLog';
 import { OrderHistoryLog } from '../orders/OrderHistoryLog';
 
+// TODO: (Refactor) Get rid of emotion/styled and use only @material-ui styles
 const PageContainer = styled.div({
   display: 'flex',
   flexDirection: 'column',
@@ -85,6 +86,7 @@ export const Character: React.FC = () => {
     setTab(newValue);
   };
 
+  // TODO: (Refactor) Extract character-refresh logic to a separate function, reuse in the data sync page
   const refresh = () => {
     Promise.all([refreshWallet(character), updateOwnOrders(character)])
       .then(() => updateInventory(character))
@@ -95,6 +97,7 @@ export const Character: React.FC = () => {
 
   const { characterId } = match.params;
 
+  // TODO: (Refactor) useCharacter
   const character: IChar = useLiveQuery(
     () => db.characters.get({ id: parseInt(characterId) }),
     [characterId]
@@ -102,6 +105,7 @@ export const Character: React.FC = () => {
 
   if (!character) return null;
 
+  // TODO: Support next/previous and respect the current sort order of the table
   const nextItem = () => {
     if (!focusedItemId) return;
     const index = itemList.indexOf(focusedItemId);

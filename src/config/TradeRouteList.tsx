@@ -36,6 +36,7 @@ export const TradeRouteList: React.FC = (props) => {
   const routes = useTradeRoutes();
   const [loading, setLoading] = useState(false);
 
+  // TODO: (Refactor) Refactor route refresh to a function, reuse in the data sync page
   const refreshRoute = (route: ITradeRoute) => {
     setLoading(true);
     updateMarket(auth, route.fromStation)
@@ -46,6 +47,8 @@ export const TradeRouteList: React.FC = (props) => {
   if (!routes) {
     return null;
   }
+
+  // TODO: Ability to delete a route
   return (
     <React.Fragment>
       <TableContainer component={Paper}>

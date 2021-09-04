@@ -9,8 +9,7 @@ import FlagIcon from '@material-ui/icons/Flag';
 import { db } from '../data/db';
 import { getItem } from './esi-static';
 import { ItemImage } from './ItemImage';
-import { IItemNotes } from './ItemNotes';
-import { Button, Drawer, Fab } from '@material-ui/core';
+import { Drawer } from '@material-ui/core';
 import { ItemDetails } from './ItemDetails';
 import { ColorFlag } from './ColorFlag';
 
@@ -29,6 +28,7 @@ export const FlaggedLog = () => {
 
   const onItemSelected = (itemId: number) => setFocusedItemId(itemId);
 
+  // TODO: (Refactor) can this whole next-item logic be done in a hook and reused? This, the focusedItem, etc.
   const nextItem = () => {
     if (!focusedItemId) return;
     const index = notes.findIndex((n) => n.itemId === focusedItemId);

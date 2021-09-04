@@ -8,14 +8,10 @@ import {
 } from '@material-ui/core';
 import React from 'react';
 import WarningIcon from '@material-ui/icons/Warning';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { IChar } from './IChar';
-import { db } from '../data/db';
-import { CharacterName } from './CharacterName';
 import { useHistory } from 'react-router-dom';
 import { useCharacters } from './character-service';
 
-// https://developers.eveonline.com/
 const redirectAuth = () => {
   const clientId = '6d9027a5346d42e1babfda3a8b34a1f1';
   const scopes = encodeURIComponent(
@@ -39,6 +35,7 @@ export const Characters: React.FC = () => {
   if (!characters) {
     return <span>'Loading...'</span>;
   }
+  // TODO: Ability to remove a character
   return (
     <List>
       {characters.length === 0 && (
@@ -49,6 +46,7 @@ export const Characters: React.FC = () => {
           <ListItemText>No Characters Found, please add one!</ListItemText>
         </ListItem>
       )}
+
       {characters.map((char: IChar, index) => (
         <ListItem
           button
@@ -65,6 +63,7 @@ export const Characters: React.FC = () => {
           <ListItemText>{char.name}</ListItemText>
         </ListItem>
       ))}
+
       <ListItem>
         <Button color="primary" onClick={redirectAuth}>
           Add Character

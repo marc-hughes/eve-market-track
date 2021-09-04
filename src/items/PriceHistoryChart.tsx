@@ -1,28 +1,20 @@
-import { useLiveQuery } from 'dexie-react-hooks';
 import React, { useEffect } from 'react';
 import { systems } from '../systems';
 import {
-  LineChart,
   Line,
   Bar,
-  BarChart,
   Label,
   Tooltip,
   ResponsiveContainer,
-  Area,
   CartesianGrid,
   ComposedChart,
-  AreaChart,
-  Scatter,
   XAxis,
   YAxis
 } from 'recharts';
 import { useAuth } from '../auth';
-import { db } from '../data/db';
-import { esiMarketOrderHistory, esiMarketStats } from '../esi';
-import { IOrders } from '../orders/orders';
 import { useStationMap } from '../station-service';
 import millify from 'millify';
+import { getMarketStats } from './itemstat';
 
 export const PriceHistoryChart: React.FC<{
   itemId: number;
@@ -36,15 +28,11 @@ export const PriceHistoryChart: React.FC<{
   const toSystem = systems[String(toStation?.solarSystemId)];
   const toRegion = toSystem?.regionID;
 
+  // TODO: Error handling
   useEffect(() => {
     if (!itemId || !toRegion) return;
-    esiMarketStats(
-      auth,
-      { type_id: String(itemId), d: String(new Date().getDay()) },
-      { regionId: String(toRegion) }
-    ).then((res) => {
-      //console.log('GRAPHING', res.data.slice(res.data.length - 30));
-      setHistory(res.data.slice(res.data.length - 30));
+    getMarketStats(auth, itemId, toRegion).then((res) => {
+      setHistory(res);
     });
   }, [itemId, toRegion]);
 
@@ -52,11 +40,7 @@ export const PriceHistoryChart: React.FC<{
   return (
     <ResponsiveContainer height={200} width="100%">
       <ComposedChart data={history}>
-        <Tooltip
-          formatter={(value: number, name: string, props: any) =>
-            millify(value)
-          }
-        />
+        <Tooltip formatter={(value: number) => millify(value)} />
         <Bar
           yAxisId="right"
           dataKey="volume"
@@ -64,6 +48,7 @@ export const PriceHistoryChart: React.FC<{
           isAnimationActive={false}
         />
         <Line
+          connectNulls={false}
           yAxisId="left"
           type="monotone"
           isAnimationActive={false}
@@ -71,6 +56,7 @@ export const PriceHistoryChart: React.FC<{
           stroke="#8884d8"
         />
         <Line
+          connectNulls={false}
           yAxisId="left"
           type="monotone"
           isAnimationActive={false}
@@ -85,11 +71,11 @@ export const PriceHistoryChart: React.FC<{
         </XAxis>
         <YAxis
           yAxisId="left"
+          orientation="right"
           tickFormatter={(v) => (Number.isSafeInteger(v) ? millify(v) : v)}
         />
         <YAxis
           yAxisId="right"
-          orientation="right"
           tickFormatter={(v) => (Number.isSafeInteger(v) ? millify(v) : v)}
         />
       </ComposedChart>

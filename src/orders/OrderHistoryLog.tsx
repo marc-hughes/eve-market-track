@@ -11,7 +11,6 @@ import millify from 'millify';
 
 import { getItem } from '../items/esi-static';
 import { ItemImage } from '../items/ItemImage';
-import { esiOpenMarket } from '../esi';
 import { IChar } from '../character/IChar';
 import { db } from '../data/db';
 import { useStationMap } from '../station-service';
@@ -49,9 +48,8 @@ export const OrderHistoryLog: React.FC<{
 
   if (!character || !orders) return null;
 
+  // TODO: (Refactor) useMemo the column defs
   const columns: GridColDef[] = [
-    // { field: 'issued', headerName: 'date', width: 180 },
-    // { field: 'isBuy', headerName: 'isBuy', width: 90 },
     {
       field: 'locationId',
       headerName: 'locationId',

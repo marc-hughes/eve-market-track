@@ -16,15 +16,11 @@ import {
 import { db } from '../data/db';
 import { IOrders } from '../orders/orders';
 
-const data = [
-  { name: 'Page A', uv: 400, pv: 2400, amt: 2400 },
-  { name: 'Page B', uv: 100, pv: 2400, amt: 2400 }
-];
-
 export const OrderChart: React.FC<{ itemId: number; locationId: number }> = ({
   itemId,
   locationId
 }) => {
+  // TODO: (Refactor) Use the stations hook
   const stationOrders = useLiveQuery(
     () =>
       db.orders
@@ -50,6 +46,7 @@ export const OrderChart: React.FC<{ itemId: number; locationId: number }> = ({
 
   console.info('Graph:', itemId, locationId, stationOrders, graphData);
 
+  // TODO: Unfuck the X-Axis display
   return (
     <ComposedChart width={400} height={200} data={graphData}>
       <Area

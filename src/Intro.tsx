@@ -2,6 +2,7 @@ import React from 'react';
 import { useStatic } from './items/esi-static';
 import { ItemImage } from './items/ItemImage';
 
+// TODO: Better intro screen
 export const Intro = () => {
   const item = useStatic(21551);
   if (item) {

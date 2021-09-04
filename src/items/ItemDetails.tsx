@@ -3,13 +3,11 @@ import {
   Button,
   Card,
   createStyles,
-  Fab,
   Grid,
   makeStyles,
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableRow
 } from '@material-ui/core';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -18,18 +16,21 @@ import React from 'react';
 import { IChar } from '../character/IChar';
 import { db } from '../data/db';
 import { getItem, IESIStatic } from './esi-static';
+
+// TODO: I don't like how millify(n,{precision:4}) will output 1.314k instead of just 1,314, and precion:4 is most useful in order price
 import millify from 'millify';
+
 import { useStationMap } from '../station-service';
 
 import { IWalletEntry } from '../character/IWalletEntry';
 import { IStation } from '../config/IStation';
 import { ItemTradeRoute } from './ItemTradeRoute';
 import { esiOpenMarket } from '../esi';
-import { IOrders, IOwnOrder, useBestSell } from '../orders/orders';
+import { IOrders, IOwnOrder, useSells } from '../orders/orders';
 import { IInventory } from '../inventory/inventory';
 import { useCharacters } from '../character/character-service';
-import { ColorFlag } from './ColorFlag';
 import { ItemColorFlag } from './ItemColorFlag';
+import moment from 'moment';
 
 /*
     [img]
@@ -70,6 +71,10 @@ const useStyles = makeStyles(() =>
     detailCard: {
       marginBottom: 15,
       padding: 10
+    },
+    competition: {
+      fontSize: 10,
+      color: '#666'
     }
   })
 );
@@ -81,11 +86,6 @@ export const ItemDetails: React.FC<{
 }> = ({ itemId, onNext, showNext }) => {
   const classes = useStyles();
   const itemDef = getItem(itemId);
-  const characters: IChar[] = useLiveQuery(() => db.characters.toArray());
-
-  const openItemWindow = (char: IChar) => {
-    esiOpenMarket(char, { type_id: String(itemId) }, {});
-  };
 
   if (!itemDef) return null;
   return (
@@ -102,17 +102,6 @@ export const ItemDetails: React.FC<{
         <Grid item md={6}>
           <RightDetailCol itemDef={itemDef} itemId={itemId} />
         </Grid>
-
-        {characters?.map((char) => (
-          <Grid key={String(char.id)} item md={1}>
-            <Avatar
-              onClick={() => openItemWindow(char)}
-              aria-label="recipe"
-              alt={char.name}
-              src={`https://image.eveonline.com/Character/${char.id}_64.jpg`}
-            />
-          </Grid>
-        ))}
       </Grid>
     </React.Fragment>
   );
@@ -123,6 +112,11 @@ const LeftDetailCol: React.FC<{
   itemId: number;
 }> = ({ itemDef, itemId }) => {
   const tradeRoutes = useLiveQuery(() => db.tradeRoute.toArray(), []);
+  const characters = useCharacters();
+
+  const openItemWindow = (char: IChar) => {
+    esiOpenMarket(char, { type_id: String(itemId) }, {});
+  };
 
   return (
     <Grid container>
@@ -136,7 +130,22 @@ const LeftDetailCol: React.FC<{
           >
             {itemDef.typeName}
           </Button>
-          <ItemColorFlag itemId={itemId} />
+          <Grid container>
+            <Grid item md={1}>
+              <ItemColorFlag itemId={itemId} />
+            </Grid>
+
+            {characters?.map((char) => (
+              <Grid key={String(char.id)} item md={1}>
+                <Avatar
+                  onClick={() => openItemWindow(char)}
+                  aria-label="recipe"
+                  alt={char.name}
+                  src={`https://image.eveonline.com/Character/${char.id}_64.jpg`}
+                />
+              </Grid>
+            ))}
+          </Grid>
         </h2>
         <ul>
           <li>
@@ -158,27 +167,58 @@ const LeftDetailCol: React.FC<{
 
 const ActiveOrder: React.FC<{ order: IOwnOrder }> = ({ order }) => {
   const stationMap = useStationMap();
-  const bestSell = useBestSell(order.typeId, order.locationId);
+  const otherOrders = useSells(order.typeId, order.locationId);
+  const classes = useStyles();
 
-  const label = !bestSell
-    ? ''
-    : bestSell.price >= order.price
-    ? '(top order)'
-    : `(lowest: ${millify(bestSell.price, { precision: 3 })})`;
   return (
-    <TableRow key={order.orderId}>
-      <TableCell component="th" scope="row">
-        {stationMap[order.locationId]?.name}
-      </TableCell>
-      <TableCell align="right">
-        {(order.isBuyOrder ? '-' : '') + millify(order.price, { precision: 3 })}
-        <br />
-        {label}
-      </TableCell>
-      <TableCell>
-        {millify(order.volumeRemain)}/{millify(order.volumeTotal)}
-      </TableCell>
-    </TableRow>
+    <React.Fragment>
+      {otherOrders
+        ?.filter((other) => other.price > order.price)
+        .reverse()
+        .map((other) => {
+          return (
+            <TableRow>
+              <TableCell>&nbsp;</TableCell>
+              <TableCell className={classes.competition} align="right">
+                {millify(other.price, { precision: 4 })}
+              </TableCell>
+              <TableCell className={classes.competition}>
+                {millify(other.volumeRemain)}
+              </TableCell>
+            </TableRow>
+          );
+        })}
+
+      <TableRow key={order.orderId}>
+        <TableCell component="th" scope="row">
+          {stationMap[order.locationId]?.name}
+        </TableCell>
+        <TableCell align="right">
+          {(order.isBuyOrder ? '-' : '') +
+            millify(order.price, { precision: 3 })}
+        </TableCell>
+        <TableCell>
+          {millify(order.volumeRemain)}/{millify(order.volumeTotal)}
+        </TableCell>
+      </TableRow>
+
+      {otherOrders
+        ?.filter((other) => other.price < order.price)
+        .reverse()
+        .map((other) => {
+          return (
+            <TableRow>
+              <TableCell>&nbsp;</TableCell>
+              <TableCell className={classes.competition} align="right">
+                {millify(other.price, { precision: 4 })}
+              </TableCell>
+              <TableCell className={classes.competition}>
+                {millify(other.volumeRemain)}
+              </TableCell>
+            </TableRow>
+          );
+        })}
+    </React.Fragment>
   );
 };
 
@@ -223,7 +263,9 @@ const TransactionTable: React.FC<{
             <TableCell style={{ width: 250 }} component="th" scope="row">
               {stationMap[transaction.locationId].name}
             </TableCell>
-            <TableCell>{transaction.date}</TableCell>
+            <TableCell>
+              {moment(transaction.date).format('yyyy-MM-DD HH:mm')}
+            </TableCell>
             <TableCell align="right">
               {(transaction.isBuy ? '-' : '') + millify(transaction.unitPrice)}
             </TableCell>
@@ -249,7 +291,9 @@ const OrdersTable: React.FC<{
             <TableCell style={{ width: 250 }} component="th" scope="row">
               {stationMap[order.locationId].name}
             </TableCell>
-            <TableCell>{order.issued}</TableCell>
+            <TableCell>
+              {moment(order.issued).format('yyyy-MM-DD HH:mm')}
+            </TableCell>
             <TableCell align="right">
               {(order.isBuyOrder ? '-' : '') + millify(order.price)}
             </TableCell>
@@ -271,7 +315,6 @@ const RightDetailCol: React.FC<{
 }> = ({ itemDef, itemId }) => {
   const stationMap = useStationMap();
   const classes = useStyles();
-  //const
 
   const activeOrders = useLiveQuery(
     () =>
@@ -279,6 +322,7 @@ const RightDetailCol: React.FC<{
         .where(['typeId+issued'])
         .between([itemId, Dexie.minKey], [itemId, Dexie.maxKey])
         .reverse()
+        .filter((o) => 0 === o.isBuyOrder)
         .toArray(),
     [itemId]
   );

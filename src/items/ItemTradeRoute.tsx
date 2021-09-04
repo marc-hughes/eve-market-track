@@ -4,14 +4,24 @@ import {
   createStyles,
   Divider,
   Grid,
-  makeStyles
+  makeStyles,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow
 } from '@material-ui/core';
+import { useLiveQuery } from 'dexie-react-hooks';
 import millify from 'millify';
 import React from 'react';
+import { useAuth } from '../auth';
 import { ITradeRoute } from '../config/ITradeRoute';
-import { useBestSell } from '../orders/orders';
+import { db } from '../data/db';
+import { IOrders, useBestSell, useMyLastBuy, useSells } from '../orders/orders';
+import { getRegionId } from '../region';
 import { useStationMap } from '../station-service';
 import { IESIStatic } from './esi-static';
+import { useItemStats } from './itemstat';
 import { PriceHistoryChart } from './PriceHistoryChart';
 // import { OrderChart } from './OrderChart';
 
@@ -20,7 +30,8 @@ const PriceDetailDisplay: React.FC<{
   sellPrice: number;
   shipping: number;
   route: ITradeRoute;
-}> = ({ buyPrice, sellPrice, shipping, route }) => {
+  description: string;
+}> = ({ buyPrice, sellPrice, shipping, route, description }) => {
   const tax = (route.tax / 100) * sellPrice;
   const broker = (route.broker / 100) * sellPrice;
   const profit = sellPrice - buyPrice - tax - broker - shipping;
@@ -35,20 +46,19 @@ const PriceDetailDisplay: React.FC<{
   };
 
   return (
-    <React.Fragment>
-      <Button onClick={copyPrice}>
-        ${millify(sellPrice, { precision: 3 })}
-      </Button>
-      <div>
-        <i>
-          Ship: <b>{millify(shipping)}</b> Tax: <b>{millify(tax)}</b> Broker:{' '}
-          <b>{millify(broker)}</b>
-        </i>
-        <br />
-        Profit: <b>{millify(profit)}</b> (<b>{profitPercent}%</b>)
-      </div>
-    </React.Fragment>
-  );
+    <TableRow>
+      <TableCell>{description}</TableCell>
+      <TableCell>{millify(buyPrice, { precision: 2 })}</TableCell>
+      <TableCell>
+        <Button size="small" onClick={copyPrice}>
+          {millify(sellPrice, { precision: 2 })}
+        </Button>
+      </TableCell>
+      <TableCell>
+        {millify(profit)} ({profitPercent}%)
+      </TableCell>
+    </TableRow>
+  ); //Ship: <b>{millify(shipping)}</b> Tax: <b>{millify(tax)}</b> Broker:{' '}
 };
 
 const useStyles = makeStyles(() =>
@@ -79,9 +89,26 @@ export const ItemTradeRoute: React.FC<{
   const buyPrice = buyInfo?.price || 0;
   const sellPrice = sellInfo?.price || 0;
   const shipping = Math.ceil(route.shippingCost * itemDef.packagedVolume);
+  const lastBuy = useMyLastBuy(itemId);
+  const auth = useAuth();
+  const regionId = getRegionId(stationMap, route.toStation);
+  const itemStats = useItemStats(auth, itemId, regionId);
+  const activeOrders = useSells(itemId, route.toStation);
 
+  const stock =
+    activeOrders?.reduce(
+      (total: number, current: IOrders) => total + current.volumeRemain,
+      0
+    ) || 0;
+
+  // TODO: (Refactor) use the profit-calc functions
   const plus20 = Math.round(
     (1.2 * buyPrice + 1.2 * shipping) /
+      (1 - (1.2 * route.tax) / 100 - (1.2 * route.broker) / 100)
+  );
+
+  const lastBuyPlus20 = Math.round(
+    (1.2 * (lastBuy?.unitPrice || 0) + 1.2 * shipping) /
       (1 - (1.2 * route.tax) / 100 - (1.2 * route.broker) / 100)
   );
 
@@ -99,38 +126,71 @@ export const ItemTradeRoute: React.FC<{
           <b>{buyPrice === 0 ? 'Not Found' : millify(buyPrice)})</b>
           <br />
           {stationMap[route.toStation]?.name} (
-          <b>{sellPrice === 0 ? 'Not Found' : millify(sellInfo.price)})</b>
+          <b>{sellPrice === 0 ? 'Not Found' : millify(sellInfo.price)}</b>)
+          <br />
+          Daily Volume: <b>{millify(itemStats?.dailyVolume || 0)}</b>
+          &nbsp;|&nbsp;Stock: <b>{millify(stock || 0)}</b>
+          &nbsp;|&nbsp;Stock Days:
+          <b>{millify(stock / (itemStats?.dailyVolume || 1))}</b>
+          &nbsp;|&nbsp;Orders: <b>{activeOrders?.length}</b>
         </Grid>
-        <Grid item md={6}>
-          <ul className={classes.priceList}>
-            <li>
-              Sell@
+
+        <Grid item md={12}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Description</TableCell>
+                <TableCell>Buy</TableCell>
+                <TableCell>Sell</TableCell>
+                <TableCell>Profit</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               <PriceDetailDisplay
+                description="Import -> Best Sell"
                 buyPrice={buyPrice}
                 sellPrice={sellPrice}
                 shipping={shipping}
                 route={route}
               />
-            </li>
-            <li>
-              Plus 20% Price:
+
               <PriceDetailDisplay
+                description="Import Plus 20%"
                 buyPrice={buyPrice}
                 sellPrice={plus20}
                 shipping={shipping}
                 route={route}
               />
-            </li>
-            <li>
-              Break even price:
+
               <PriceDetailDisplay
+                description="Import break even"
                 buyPrice={buyPrice}
                 sellPrice={breakEven}
                 shipping={shipping}
                 route={route}
               />
-            </li>
-          </ul>
+
+              {lastBuy && (
+                <React.Fragment>
+                  <PriceDetailDisplay
+                    description="Last Buy -> Best Sell"
+                    buyPrice={lastBuy.unitPrice}
+                    sellPrice={sellPrice}
+                    shipping={shipping}
+                    route={route}
+                  />
+
+                  <PriceDetailDisplay
+                    description="Last Buy Plus 20%"
+                    buyPrice={lastBuy.unitPrice}
+                    sellPrice={lastBuyPlus20}
+                    shipping={shipping}
+                    route={route}
+                  />
+                </React.Fragment>
+              )}
+            </TableBody>
+          </Table>
         </Grid>
       </Grid>
 

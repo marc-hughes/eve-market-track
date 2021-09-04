@@ -31,5 +31,6 @@ export const refreshWallet = (character: IChar): Promise<boolean> => {
         transactions.map<number>((t: IWalletEntry) => t.locationId)
       )
     ]).then(() => true);
+    // TODO: Error handling
   });
 };

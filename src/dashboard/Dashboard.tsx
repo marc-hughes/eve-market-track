@@ -8,6 +8,7 @@ import List from '@material-ui/core/List';
 import Typography from '@material-ui/core/Typography';
 import Divider from '@material-ui/core/Divider';
 import ListItem from '@material-ui/core/ListItem';
+import EmojiObjectsIcon from '@material-ui/icons/EmojiObjects';
 import SettingsIcon from '@material-ui/icons/Settings';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
@@ -28,6 +29,7 @@ import { AuthTokenInfo } from '../esi';
 import { DataSync } from '../DataSync';
 import { Import } from '../import/Import';
 import { FlaggedLog } from '../items/FlaggedLog';
+import { Suggestions } from './Suggestions';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -124,6 +126,17 @@ export const Dashboard = (props: any) => {
 
               <ListItem
                 button
+                selected={location.pathname === '/suggestions'}
+                onClick={goToRoute('/suggestions')}
+              >
+                <ListItemIcon>
+                  <EmojiObjectsIcon />
+                </ListItemIcon>
+                <ListItemText>Suggestions</ListItemText>
+              </ListItem>
+
+              <ListItem
+                button
                 selected={location.pathname === '/sync'}
                 onClick={goToRoute('/sync')}
               >
@@ -154,6 +167,7 @@ export const Dashboard = (props: any) => {
             <Route path="/config" component={TradeConfig} />
             <Route path="/flagged" component={FlaggedLog} />
             <Route path="/callback" component={AddCharacter} />
+            <Route path="/suggestions" component={Suggestions} />
             <Route path="/character/:characterId" component={Character} />
             <Route component={Intro} />
           </Switch>

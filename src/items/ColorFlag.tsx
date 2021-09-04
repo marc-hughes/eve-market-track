@@ -1,8 +1,6 @@
 import { Fab, Menu, MenuItem } from '@material-ui/core';
 import React, { useState } from 'react';
 import FlagIcon from '@material-ui/icons/Flag';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../data/db';
 
 const flagColors = [
   '#dddddd',

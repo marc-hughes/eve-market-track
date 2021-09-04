@@ -1,9 +1,15 @@
 import {
+  AppBar,
+  Button,
   createStyles,
   Drawer,
+  Grid,
   makeStyles,
   Paper,
-  TextField
+  TextField,
+  Toolbar,
+  Tooltip,
+  Typography
 } from '@material-ui/core';
 import {
   DataGrid,
@@ -12,7 +18,7 @@ import {
 } from '@material-ui/data-grid';
 import { Autocomplete } from '@material-ui/lab';
 import { useLiveQuery } from 'dexie-react-hooks';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '../auth';
 import { ITradeRoute } from '../config/ITradeRoute';
 import { db } from '../data/db';
@@ -21,7 +27,7 @@ import { getItem } from '../items/esi-static';
 import { ItemImage } from '../items/ItemImage';
 import { IItemNotes } from '../items/ItemNotes';
 import { useStationMap } from '../station-service';
-import { findDeals } from './import-service';
+import { findDeals, FindDealsOptions } from './import-service';
 import styled from '@emotion/styled';
 import millify from 'millify';
 import { ItemDetails } from '../items/ItemDetails';
@@ -45,11 +51,12 @@ const useStyles = makeStyles(() =>
   })
 );
 
+// TODO: (Refactor) Get rid of emotion/styled and use only @material-ui styles
 const GridContainer = styled.div({
   width: '100%',
   flex: '1 1 auto',
   label: 'GridContainer',
-  marginTop: 60,
+  marginTop: 20,
   fontSize: 10,
   display: 'flex',
   flexDirection: 'column'
@@ -62,6 +69,19 @@ export const Import: React.FC = () => {
   const [tradeRoute, setTradeRoute] = React.useState(null);
   const [processing, setProcessing] = React.useState(false);
   const [deals, setDeals] = React.useState([]);
+
+  useEffect(() => {
+    if (
+      routes &&
+      stationMap &&
+      routes.length > 0 &&
+      stationMap[routes[0].toStation] &&
+      !tradeRoute
+    ) {
+      setTradeRoute(routes[0]);
+    }
+  }, [routes, stationMap]);
+
   const noteMap = useLiveQuery(() =>
     db.itemNotes.toArray().then(
       (notes) =>
@@ -78,8 +98,22 @@ export const Import: React.FC = () => {
     newValue: ITradeRoute | null
   ) => {
     setTradeRoute(newValue);
+  };
+
+  const onBroadCalc = () => {
     setProcessing(true);
-    findDeals(auth, newValue, stationMap)
+    findDeals(auth, tradeRoute, stationMap)
+      .then(setDeals)
+      .then(() => setProcessing(false));
+  };
+
+  const calcForConfig = (config: FindDealsOptions) => () => {
+    // Trying to find deals that don't hit:
+    //   > 25% markup
+    //   < 50% stock
+    // Because those are the filters most goonmetrics people use
+    setProcessing(true);
+    findDeals(auth, tradeRoute, stationMap, config)
       .then(setDeals)
       .then(() => setProcessing(false));
   };
@@ -133,6 +167,27 @@ export const Import: React.FC = () => {
       width: 100,
       valueFormatter: (params: GridValueGetterParams) =>
         millify(params.row.volume)
+    },
+    {
+      field: 'stock',
+      headerName: 'Current sell order stock',
+      width: 100,
+      valueFormatter: (params: GridValueGetterParams) =>
+        millify(params.row.stock)
+    },
+    {
+      field: 'daysOfStock',
+      headerName: 'Days of Stock',
+      width: 100,
+      valueFormatter: (params: GridValueGetterParams) =>
+        millify(params.row.daysOfStock)
+    },
+    {
+      field: 'potential',
+      headerName: 'Potential Daily Profit',
+      width: 100,
+      valueFormatter: (params: GridValueGetterParams) =>
+        millify(params.row.potential)
     }
   ];
 
@@ -148,21 +203,112 @@ export const Import: React.FC = () => {
   return (
     <Paper className={classes.paper}>
       {routes && (
-        <Autocomplete
-          disabled={processing}
-          options={routes}
-          value={tradeRoute}
-          onChange={onChange}
-          getOptionLabel={(option: ITradeRoute) =>
-            stationMap[option.fromStation].name +
-            ' ⏩🚚⏩ ' +
-            stationMap[option.toStation].name
-          }
-          style={{ width: '100%' }}
-          renderInput={(params) => (
-            <TextField {...params} label="Trade Route" variant="outlined" />
-          )}
-        />
+        <Grid container>
+          <Grid item md={12}>
+            <Toolbar>
+              <Autocomplete
+                disabled={processing}
+                options={routes}
+                value={tradeRoute}
+                onChange={onChange}
+                getOptionLabel={(option: ITradeRoute) =>
+                  stationMap[option.fromStation].name +
+                  ' ⏩🚚⏩ ' +
+                  stationMap[option.toStation].name
+                }
+                style={{ width: '100%' }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Trade Route"
+                    variant="standard"
+                  />
+                )}
+              />
+              <Tooltip title="Broad selection criteria to grab the widest variety of possible deals">
+                <Button
+                  disabled={processing}
+                  onClick={onBroadCalc}
+                  variant="outlined"
+                >
+                  Broad
+                </Button>
+              </Tooltip>
+
+              <Tooltip title="Narrow selection criteria to grab a smaller selection of the potentially best deals">
+                <Button
+                  disabled={processing}
+                  onClick={calcForConfig({
+                    minProfit: 1,
+                    minProfitPercent: 20,
+                    maxProfitPercent: Number.MAX_SAFE_INTEGER,
+                    minDailyProfit: 1000000,
+                    minStockDays: 0,
+                    maxStockDays: 4,
+                    minDailyVolume: 1
+                  })}
+                  variant="outlined"
+                >
+                  Narrow
+                </Button>
+              </Tooltip>
+
+              <Tooltip title="Items that are low on stock">
+                <Button
+                  disabled={processing}
+                  onClick={calcForConfig({
+                    minProfit: 1,
+                    minProfitPercent: 1,
+                    maxProfitPercent: Number.MAX_SAFE_INTEGER,
+                    minDailyProfit: 0,
+                    minStockDays: 0,
+                    maxStockDays: 1,
+                    minDailyVolume: 0
+                  })}
+                  variant="outlined"
+                >
+                  Stock
+                </Button>
+              </Tooltip>
+
+              <Tooltip title="Items with high (> 40%) margins">
+                <Button
+                  disabled={processing}
+                  onClick={calcForConfig({
+                    minProfit: 1,
+                    minProfitPercent: 40,
+                    maxProfitPercent: Number.MAX_SAFE_INTEGER,
+                    minDailyProfit: 0,
+                    minStockDays: 0,
+                    maxStockDays: Number.MAX_SAFE_INTEGER,
+                    minDailyVolume: 1
+                  })}
+                  variant="outlined"
+                >
+                  Margin
+                </Button>
+              </Tooltip>
+
+              <Tooltip title="Items that might be a good deal, and don't currently show up in the 2 main goonpraisal lists. Maybe these won't get goonrushed?">
+                <Button
+                  disabled={processing}
+                  onClick={calcForConfig({
+                    minProfit: 1,
+                    minProfitPercent: 5,
+                    maxProfitPercent: 24,
+                    minDailyProfit: 1,
+                    minStockDays: 4,
+                    maxStockDays: Number.MAX_SAFE_INTEGER,
+                    minDailyVolume: 1
+                  })}
+                  variant="outlined"
+                >
+                  Goonpraisal
+                </Button>
+              </Tooltip>
+            </Toolbar>
+          </Grid>
+        </Grid>
       )}
       <GridContainer>
         {processing && <div>Processing trade route...</div>}

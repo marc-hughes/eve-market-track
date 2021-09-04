@@ -6,6 +6,7 @@ import { validateStations } from '../station-service';
 const hangarFilter = (a: IESICharacterAssets) => a.location_flag === 'Hangar';
 
 export const updateInventory = async (character: IChar) => {
+  // TODO: Error handling
   const first = await esiCharacterAssets(
     character,
     {},

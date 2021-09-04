@@ -6,6 +6,7 @@ import { IOwnOrder } from './orders';
 export const updateOwnOrders = async (
   character: IChar
 ): Promise<number | boolean> =>
+  // TODO: Error handling
   esiMarketOwnOrders(character, {}, { characterId: String(character.id) })
     .then((response) =>
       // First delete old orders for this char, then add new ones
