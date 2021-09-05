@@ -79,7 +79,6 @@ export const Dashboard = (props: any) => {
     console.info('Going to', path);
     history.push(path);
   };
-
   return (
     <AuthContext.Provider value={auth}>
       <div className={classes.root}>

@@ -3,7 +3,21 @@ import * as ReactDOM from 'react-dom';
 
 import { HashRouter, Link, Route, Switch } from 'react-router-dom';
 import { Dashboard } from './dashboard/Dashboard';
+import * as Sentry from '@sentry/react';
+import { Integrations } from '@sentry/tracing';
+
 import CssBaseline from '@material-ui/core/CssBaseline';
+import { BigBad } from './BigBad';
+
+Sentry.init({
+  dsn: 'https://b70a82bc062442a98f62f8041abec897@o990106.ingest.sentry.io/5946573', // api key is public anwyays, doesn't seem horrible to code it in
+  integrations: [new Integrations.BrowserTracing()],
+
+  // Set tracesSampleRate to 1.0 to capture 100%
+  // of transactions for performance monitoring.
+  // We recommend adjusting this value in production
+  tracesSampleRate: 1.0
+});
 
 function bootstrap() {
   if ('storage' in navigator && 'estimate' in navigator.storage) {
@@ -23,12 +37,12 @@ function bootstrap() {
     });
 
   ReactDOM.render(
-    <React.Fragment>
+    <Sentry.ErrorBoundary fallback={<BigBad />}>
       <CssBaseline />
       <HashRouter>
         <Dashboard />
       </HashRouter>
-    </React.Fragment>,
+    </Sentry.ErrorBoundary>,
     document.querySelector('#react-content')
   );
 }

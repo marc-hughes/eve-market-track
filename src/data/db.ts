@@ -31,23 +31,13 @@ class AppDB extends Dexie {
         'transactionId,[characterId+date],[typeId+isBuy+date]',
       orders:
         'orderId,locationId,typeId,[typeId+locationId],[typeId+locationId+isBuyOrder+price]',
-      ownOrders: 'orderId,locationId,[characterId+issued],[typeId+issued]',
+      ownOrders:
+        'orderId,locationId,[characterId+issued],[typeId+issued],[typeId+locationId]',
       inventory:
         'itemId,locationId,characterId,[characterId+locationId],typeId',
-      orderHistory: 'orderId,locationId,[characterId+issued],[typeId+issued]'
-    });
-
-    this.version(2).stores({
-      itemNotes: 'itemId'
-    });
-
-    this.version(3).stores({
+      orderHistory: 'orderId,locationId,[characterId+issued],[typeId+issued]',
+      itemNotes: 'itemId',
       itemStat: '[itemId+regionId]'
-    });
-
-    this.version(4).stores({
-      ownOrders:
-        'orderId,locationId,[characterId+issued],[typeId+issued],[typeId+locationId]'
     });
 
     // The following line is needed if your typescript

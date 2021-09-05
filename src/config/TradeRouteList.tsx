@@ -14,6 +14,7 @@ import { ITradeRoute } from './ITradeRoute';
 import { useAuth } from '../auth';
 import { updateMarket } from '../market-service';
 import { Alert } from '@material-ui/lab';
+import { db } from '../data/db';
 
 const useStyles = makeStyles({
   table: {
@@ -31,24 +32,17 @@ const useStyles = makeStyles({
 
 export const TradeRouteList: React.FC = (props) => {
   const classes = useStyles();
-  const auth = useAuth();
   const stations = useStationMap();
   const routes = useTradeRoutes();
-  const [loading, setLoading] = useState(false);
 
-  // TODO: (Refactor) Refactor route refresh to a function, reuse in the data sync page
-  const refreshRoute = (route: ITradeRoute) => {
-    setLoading(true);
-    updateMarket(auth, route.fromStation)
-      .then(() => updateMarket(auth, route.toStation))
-      .then(() => setLoading(false));
+  const deleteRoute = (route: ITradeRoute) => {
+    db.tradeRoute.delete(route.id);
   };
 
   if (!routes) {
     return null;
   }
 
-  // TODO: Ability to delete a route
   return (
     <React.Fragment>
       <TableContainer component={Paper}>
@@ -79,9 +73,9 @@ export const TradeRouteList: React.FC = (props) => {
                   <Button
                     variant="outlined"
                     color="primary"
-                    onClick={() => refreshRoute(route)}
+                    onClick={() => deleteRoute(route)}
                   >
-                    Refresh Prices
+                    Delete Route
                   </Button>
                 </TableCell>
               </TableRow>
@@ -89,19 +83,6 @@ export const TradeRouteList: React.FC = (props) => {
           </TableBody>
         </Table>
       </TableContainer>
-      <Backdrop className={classes.backdrop} open={loading}>
-        <Alert className={classes.infoBox} severity="info">
-          <p>
-            Sit Tight. This can take a minute, we're grabbing all the orders and
-            saving them for future use.
-          </p>
-          <p>
-            Because of the way the ESI works, we have to load an entire region's
-            worth of orders for NPC stations.
-          </p>
-        </Alert>
-        <CircularProgress color="inherit" />
-      </Backdrop>
     </React.Fragment>
   );
 };

@@ -49,7 +49,7 @@ const createWindow = async (): Promise<void> => {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          "default-src 'unsafe-eval' 'unsafe-inline' 'self' data: https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com https://*.eveonline.com https://*.evetech.net"
+          "default-src 'unsafe-eval' 'unsafe-inline' 'self' data: https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com https://*.eveonline.com https://*.evetech.net https://*.ingest.sentry.io"
         ]
       }
     });
