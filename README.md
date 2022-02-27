@@ -23,7 +23,10 @@ infect your PC with malware, so go ahead and allow that, or don't, I don't care.
 
 # How to use it:
 
-Here's a shitty demo:
+Web version at: http://eve-market.shittywebapp.com/
+Desktop / Electron version at: https://github.com/TrenzaloreStrax/market-tool/releases/
+
+Here's a demo:
 https://github.com/TrenzaloreStrax/market-tool/blob/main/demo/2021-09-03%2011-52-22.mp4?raw=true
 
 More & better info coming soon
