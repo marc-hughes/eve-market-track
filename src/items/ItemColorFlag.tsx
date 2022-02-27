@@ -8,10 +8,10 @@ export const ItemColorFlag: React.FC<{ itemId: number }> = ({ itemId }) => {
   const pickColor = (color: string) => {
     console.info(`Setting color to ${color}`, itemId);
     if (!color) {
-      db.itemNotes.delete(itemId);
+      note && db.itemNotes.put({ ...note, color: null });
       return;
     }
-    db.itemNotes.put({ itemId: itemId, color, note: '' });
+    db.itemNotes.put({ itemId: itemId, color, note: '', strategy: -1 });
   };
   return <ColorFlag value={note?.color} onChange={pickColor} />;
 };

@@ -7,6 +7,7 @@ import { getRegionId } from '../region';
 import { getStationMap } from '../station-service';
 import { getPrice, getProfit } from '../items/profit-calc';
 import millify from 'millify';
+import { findStratForItem, getStrategies } from '../strategy/strategy-service';
 
 export interface Suggestion {
   suggestionId: string;
@@ -21,11 +22,15 @@ export interface Suggestion {
 const inventorySuggestions = async (auth: IAuth): Promise<Suggestion[]> => {
   const routes = await db.tradeRoute.toArray();
   const rv: Suggestion[] = [];
+
+  const strategies = await getStrategies();
+
   for (const route of routes) {
     const inventory = await db.inventory
       .where('locationId')
       .equals(route.toStation)
       .toArray();
+
     for (const inv of inventory) {
       const lastBuy = await db.walletTransactions
         .where(['typeId+isBuy+date'])
@@ -37,7 +42,14 @@ const inventorySuggestions = async (auth: IAuth): Promise<Suggestion[]> => {
       const myOrders = await getOwnSells(inv.typeId, route.toStation);
       if (myOrders.length > 0) continue;
 
-      const targetPrice = getPrice(lastBuy.unitPrice, 1.05, inv.typeId, route);
+      const strategy = await findStratForItem(strategies, inv.typeId);
+
+      const targetPrice = getPrice(
+        lastBuy.unitPrice,
+        strategy.listMinProfitPercent / 100 + 1,
+        inv.typeId,
+        route
+      );
 
       const otherOrders = await getSells(inv.typeId, route.toStation);
       const lowerOrders = otherOrders.filter(
@@ -47,7 +59,12 @@ const inventorySuggestions = async (auth: IAuth): Promise<Suggestion[]> => {
         const profit = getProfit(
           lastBuy.unitPrice,
           otherOrders[0]?.price ||
-            getPrice(lastBuy.unitPrice, 1.2, inv.typeId, route),
+            getPrice(
+              lastBuy.unitPrice,
+              strategy.listMinProfitPercent / 100 + 1,
+              inv.typeId,
+              route
+            ),
           inv.typeId,
           route
         );
@@ -75,6 +92,7 @@ const orderSuggestions = async (
   const orders = await db.ownOrders.toArray();
   const routes = await db.tradeRoute.toArray();
   const stationMap = await getStationMap();
+  const strategies = await getStrategies();
   const rv: Suggestion[] = [];
 
   for (const order of orders.filter((o) => o.isBuyOrder === 0)) {
@@ -93,10 +111,13 @@ const orderSuggestions = async (
 
     if (lowerOrders.length === 0) continue;
 
+    const strategy = await findStratForItem(strategies, order.typeId);
+
     const lowerStock = lowerOrders.reduce(
       (sum, order) => sum + order.volumeRemain,
       0
     );
+
     const lowerStockDays = lowerStock / Math.max(1, stats?.dailyVolume || 0);
 
     const lastBuy = await db.walletTransactions
@@ -116,8 +137,8 @@ const orderSuggestions = async (
 
     if (
       type === 'relist' &&
-      lowerStockDays > 0.75 &&
-      profit.profitPercent > 10
+      lowerStockDays > strategy.relistStockAheadDays &&
+      profit.profitPercent > strategy.relistMinProfitPercent
     ) {
       const newPrice = lowerOrders[0].price;
 
@@ -134,7 +155,7 @@ const orderSuggestions = async (
       });
     }
 
-    if (type != 'relist' && lowerStockDays > 5 && profit.profitPercent < 5) {
+    if (type != 'relist' && lowerStockDays > 5 && profit.profitPercent < 2) {
       rv.push({
         suggestionId: `order-${order.orderId}`,
         description: `Loser, good candidate if you need to free up order slots`,

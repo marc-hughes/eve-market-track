@@ -4,17 +4,18 @@ import {
   GridValueGetterParams
 } from '@material-ui/data-grid';
 import { useLiveQuery } from 'dexie-react-hooks';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import FlagIcon from '@material-ui/icons/Flag';
 import { db } from '../data/db';
 import { getItem } from './esi-static';
 import { ItemImage } from './ItemImage';
-import { Drawer } from '@material-ui/core';
 import { ItemDetails } from './ItemDetails';
 import { ColorFlag } from './ColorFlag';
+import { IItemNotes } from './ItemNotes';
+import { usePagination } from '../pagination';
+import { FullDrawer } from '../FullDrawer';
 
 export const FlaggedLog = () => {
-  const [focusedItemId, setFocusedItemId] = React.useState<number | null>(null);
   const [filterColor, setFilterColor] = useState<string | null>(null);
   const notes = useLiveQuery(
     () =>
@@ -24,19 +25,20 @@ export const FlaggedLog = () => {
     [filterColor]
   );
 
+  const {
+    currentIndex,
+    setList,
+    setCurrentItem,
+    onSortModelChange,
+    count,
+    currentItem,
+    next,
+    previous
+  } = usePagination<IItemNotes>(notes || []);
+
+  useEffect(() => notes && setList(notes), [notes]);
+
   if (!notes) return null;
-
-  const onItemSelected = (itemId: number) => setFocusedItemId(itemId);
-
-  // TODO: (Refactor) can this whole next-item logic be done in a hook and reused? This, the focusedItem, etc.
-  const nextItem = () => {
-    if (!focusedItemId) return;
-    const index = notes.findIndex((n) => n.itemId === focusedItemId);
-    const next = notes[index + 1]?.itemId;
-    if (next) {
-      setFocusedItemId(next);
-    }
-  };
 
   const columns: GridColDef[] = [
     {
@@ -70,21 +72,25 @@ export const FlaggedLog = () => {
   return (
     <React.Fragment>
       <DataGrid
+        onSortModelChange={onSortModelChange}
         rowHeight={30}
         disableColumnMenu={true}
-        onRowClick={(params) => onItemSelected(params.row.itemId)}
+        onRowClick={(params) => setCurrentItem(params.row as IItemNotes)}
         columns={columns}
         rows={notes}
         getRowId={(row) => row.itemId}
       />
 
-      <Drawer
-        anchor="bottom"
-        open={!!focusedItemId}
-        onClose={() => setFocusedItemId(null)}
-      >
-        <ItemDetails itemId={focusedItemId} onNext={nextItem} showNext={true} />
-      </Drawer>
+      <FullDrawer open={!!currentItem} onClose={() => setCurrentItem(null)}>
+        <ItemDetails
+          itemId={currentItem?.itemId}
+          onNext={next}
+          onPrevious={previous}
+          showNext={true}
+          currentPage={currentIndex + 1}
+          maxPage={count}
+        />
+      </FullDrawer>
     </React.Fragment>
   );
 };

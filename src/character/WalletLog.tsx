@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Dexie from 'dexie';
 
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -19,19 +19,24 @@ import { IItemNotes } from '../items/ItemNotes';
 import { createStyles } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 import moment from 'moment';
+import { IWalletEntry } from './IWalletEntry';
+import { SortModel } from '../pagination';
 
-type ItemSelectedCallback = (itemId: number) => void;
+type ItemSelectedCallback = (itemId: IWalletEntry) => void;
 
 const useStyles = makeStyles(() =>
   createStyles({
     compactRow: {}
   })
 );
+type ItemListCallback = (itemId: IWalletEntry[]) => void;
 
 export const WalletLog: React.FC<{
   character: IChar;
   onItemSelected: ItemSelectedCallback;
-}> = ({ character, onItemSelected }) => {
+  onItemListChanged: ItemListCallback;
+  onSortModelChange: (sortModel: SortModel) => void;
+}> = ({ character, onItemSelected, onItemListChanged, onSortModelChange }) => {
   const stationMap = useStationMap();
   const classes = useStyles();
 
@@ -52,8 +57,14 @@ export const WalletLog: React.FC<{
         .where(['characterId+date'])
         .between([character.id, Dexie.minKey], [character.id, Dexie.maxKey])
         .reverse()
+        .limit(10000)
         .toArray(),
     [character]
+  );
+
+  useEffect(
+    () => transactions && onItemListChanged(transactions),
+    [transactions]
   );
 
   if (!character || !transactions) return null;
@@ -116,9 +127,10 @@ export const WalletLog: React.FC<{
 
   return (
     <DataGrid
+      onSortModelChange={onSortModelChange}
       rowHeight={30}
       disableColumnMenu={true}
-      onRowClick={(params) => onItemSelected(params.row.typeId)}
+      onRowClick={(params) => onItemSelected(params.row as IWalletEntry)}
       columns={columns}
       rows={transactions}
       getRowId={(row) => row.transactionId}

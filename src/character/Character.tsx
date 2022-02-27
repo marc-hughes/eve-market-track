@@ -19,16 +19,19 @@ import { useRouteMatch } from 'react-router';
 import { db } from '../data/db';
 
 import { IChar } from './IChar';
-import { refreshWallet } from './wallet-service';
 import styled from '@emotion/styled';
 import { WalletLog } from './WalletLog';
 import { Alert } from '@material-ui/lab';
-import { updateOwnOrders } from '../orders/orders-service';
 import { OrderLog } from '../orders/OrderLog';
 import { ItemDetails } from '../items/ItemDetails';
-import { updateInventory } from '../inventory/inventory-service';
 import { InventoryLog } from '../inventory/InventoryLog';
 import { OrderHistoryLog } from '../orders/OrderHistoryLog';
+import { refreshCharacter } from '../sync-service';
+import { FullDrawer } from '../FullDrawer';
+import { IOrders, IOwnOrder, IOwnOrderHistory } from '../orders/orders';
+import { IInventory } from '../inventory/inventory';
+import { usePagination } from '../pagination';
+import { IWalletEntry } from './IWalletEntry';
 
 // TODO: (Refactor) Get rid of emotion/styled and use only @material-ui styles
 const PageContainer = styled.div({
@@ -71,10 +74,18 @@ export const Character: React.FC = () => {
   const match = useRouteMatch<{ characterId: string }>();
   const [tab, setTab] = React.useState(0);
   const [refreshedOpen, setRefreshedOpen] = React.useState(false);
-  const [focusedItemId, setFocusedItemId] = React.useState<number | null>(null);
-  const [itemList, _setItemList] = React.useState<number[]>([]);
-
-  const setItemList = (items: number[]) => _setItemList([...new Set(items)]);
+  const {
+    currentIndex,
+    setList,
+    setCurrentItem,
+    onSortModelChange,
+    count,
+    currentItem,
+    next,
+    previous
+  } = usePagination<IOwnOrder | IInventory | IWalletEntry | IOwnOrderHistory>(
+    []
+  );
 
   const classes = useStyles();
 
@@ -84,15 +95,13 @@ export const Character: React.FC = () => {
 
   const handleTabChange = (event: React.ChangeEvent<any>, newValue: number) => {
     setTab(newValue);
+    onSortModelChange(null);
   };
 
-  // TODO: (Refactor) Extract character-refresh logic to a separate function, reuse in the data sync page
   const refresh = () => {
-    Promise.all([refreshWallet(character), updateOwnOrders(character)])
-      .then(() => updateInventory(character))
-      .then(() => {
-        setRefreshedOpen(true);
-      });
+    refreshCharacter(character).then(() => {
+      setRefreshedOpen(true);
+    });
   };
 
   const { characterId } = match.params;
@@ -104,16 +113,6 @@ export const Character: React.FC = () => {
   );
 
   if (!character) return null;
-
-  // TODO: Support next/previous and respect the current sort order of the table
-  const nextItem = () => {
-    if (!focusedItemId) return;
-    const index = itemList.indexOf(focusedItemId);
-    const next = itemList[index + 1];
-    if (next) {
-      setFocusedItemId(next);
-    }
-  };
 
   return (
     <PageContainer>
@@ -145,46 +144,50 @@ export const Character: React.FC = () => {
         <GridContainer>
           {tab === 0 && (
             <OrderLog
-              onItemListChanged={setItemList}
-              onItemSelected={setFocusedItemId}
+              onItemListChanged={setList}
+              onItemSelected={setCurrentItem}
               character={character}
+              onSortModelChange={onSortModelChange}
             />
           )}
 
           {tab === 1 && (
             <InventoryLog
               character={character}
-              onItemListChanged={setItemList}
-              onItemSelected={setFocusedItemId}
+              onItemListChanged={setList}
+              onItemSelected={setCurrentItem}
+              onSortModelChange={onSortModelChange}
             />
           )}
           {tab === 2 && (
             <WalletLog
-              onItemSelected={setFocusedItemId}
+              onItemListChanged={setList}
+              onItemSelected={setCurrentItem}
               character={character}
+              onSortModelChange={onSortModelChange}
             />
           )}
           {tab === 3 && (
             <OrderHistoryLog
-              onItemListChanged={setItemList}
-              onItemSelected={setFocusedItemId}
+              onItemListChanged={setList}
+              onItemSelected={setCurrentItem}
               character={character}
+              onSortModelChange={onSortModelChange}
             />
           )}
         </GridContainer>
       </Paper>
 
-      <Drawer
-        anchor="bottom"
-        open={!!focusedItemId}
-        onClose={() => setFocusedItemId(null)}
-      >
+      <FullDrawer open={!!currentItem} onClose={() => setCurrentItem(null)}>
         <ItemDetails
-          itemId={focusedItemId}
-          onNext={nextItem}
-          showNext={tab !== 2}
+          itemId={currentItem?.typeId}
+          onNext={next}
+          onPrevious={previous}
+          currentPage={currentIndex + 1}
+          showNext={true}
+          maxPage={count}
         />
-      </Drawer>
+      </FullDrawer>
 
       <Snackbar
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}

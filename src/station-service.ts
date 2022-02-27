@@ -18,7 +18,8 @@ const addPlayerStation = async (auth: IAuth, structureId: number) => {
     name: station.name,
     ownerId: station.owner_id,
     solarSystemId: station.solar_system_id,
-    typeId: station.type_id
+    typeId: station.type_id,
+    founderId: auth.characterId
   });
   console.info('Found new station', station);
 };
@@ -38,7 +39,8 @@ const addNPCStation = async (auth: IAuth, locationId: number) => {
     name: station.name,
     ownerId: station.owner,
     solarSystemId: station.system_id,
-    typeId: station.type_id
+    typeId: station.type_id,
+    founderId: auth.characterId
   });
   console.info('Found new station', station);
 };
@@ -85,7 +87,8 @@ export const getStationMap = async (): Promise<Record<string, IStation>> => {
             name: property,
             ownerId: 0,
             solarSystemId: 0,
-            typeId: 0
+            typeId: 0,
+            founderId: null
           };
     }
   });
@@ -113,7 +116,8 @@ export const useStationMap = (): Record<string, IStation> => {
             name: property,
             ownerId: 0,
             solarSystemId: 0,
-            typeId: 0
+            typeId: 0,
+            founderId: null
           };
     }
   });

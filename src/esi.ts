@@ -1,8 +1,13 @@
 import axios, { AxiosResponse } from 'axios';
 import { db } from './data/db';
 
-export type IAuth = { accessToken: string; refreshToken: string };
+export type IAuth = {
+  characterId: number;
+  accessToken: string;
+  refreshToken: string;
+};
 export interface AuthTokenInfo {
+  characterId: number;
   accessToken: string;
   refreshToken: string;
   expiresIn: number;
@@ -20,7 +25,7 @@ export interface IESILoginVerifyResponse {
 }
 
 function esiRequest<TRequest, TResponse>(
-  auth: IAuth,
+  auth: IAccessToken,
   path: string,
   params: Record<string, string>,
   base: string,
@@ -56,13 +61,14 @@ function esiRequest<TRequest, TResponse>(
         .then(({ data }) => {
           const accessToken = data.access_token;
           const refreshToken = data.refresh_token;
-          const newAuth = { accessToken, refreshToken };
+          auth.accessToken = accessToken;
+          auth.refreshToken = refreshToken;
           db.characters
             .where('refreshToken')
             .equals(refreshToken)
             .modify({ accessToken: accessToken });
           // Retry the original request with new auth data.
-          return esiRequest<TRequest, TResponse>(newAuth, path, params, base);
+          return esiRequest<TRequest, TResponse>(auth, path, params, base);
         });
     }
 
@@ -77,32 +83,40 @@ function esiRequest<TRequest, TResponse>(
   });
 }
 
+interface IAccessToken {
+  accessToken: string;
+  refreshToken: string;
+}
+
 function genRequest<TRequest, TResponse>(
   path: string,
   base = 'https://esi.evetech.net/latest',
   method: 'get' | 'post' = 'get'
 ) {
   return (
-    auth: IAuth,
+    auth: IAccessToken,
     params: Record<string, string> = {},
-    pathReplacements: Record<string, string> = {}
-  ) =>
-    esiRequest<TRequest, TResponse>(
+    pathReplacements: Record<string, string> = {},
+    cacheBust = false
+  ) => {
+    const tail = cacheBust ? '?t=' + new Date().getTime() : '';
+    return esiRequest<TRequest, TResponse>(
       auth,
       Object.entries(pathReplacements).reduce((acc, curr) => {
         const [key, value] = curr;
         return acc.replace(`:${key}`, value);
-      }, path),
+      }, path) + tail,
       params,
       base,
       method
     );
+  };
 }
 
 export const esiLoginVerify = genRequest<
   NoRequestBody,
   IESILoginVerifyResponse
->('/oauth/verify', 'https://login.eveonline.com');
+>('/verify', 'https://esi.evetech.net');
 
 interface IESIStructuresRequest {
   structure_id: number;
@@ -273,4 +287,18 @@ export const esiMarketStats = genRequest<NoRequestBody, IESIMarketStats[]>(
 
 export const esiMarketTypes = genRequest<NoRequestBody, number[]>(
   '/markets/:regionId/types/'
+);
+
+interface IESIServerStatus {
+  players: number;
+  start_time: string;
+  vip: boolean;
+}
+
+export const esiServerStatus = genRequest<NoRequestBody, IESIServerStatus>(
+  '/status/'
+);
+
+export const walletBallance = genRequest<NoRequestBody, number>(
+  '/characters/:characterId/wallet/'
 );

@@ -26,7 +26,10 @@ export const updateInventory = async (character: IChar) => {
 
   // This discovers any new station names that we just found out about.
   validateStations(
-    character,
+    {
+      ...character,
+      characterId: character.id
+    },
     assets.map<number>((t: IESICharacterAssets) => t.location_id)
   );
 

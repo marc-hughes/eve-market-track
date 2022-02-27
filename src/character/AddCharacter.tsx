@@ -6,23 +6,32 @@ import { CharacterInfo } from './character-service';
 import { db } from '../data/db';
 import { Redirect } from 'react-router';
 import { refreshWallet } from './wallet-service';
+import { getChallenge, getOuthCreds, resetChallenge } from './oauth';
 
 const retrieveCharacterInfo = (
-  accessToken: AuthTokenInfo
+  accessToken: PartialAuthToken
 ): Promise<CharacterInfo & AuthTokenInfo> => {
-  return esiLoginVerify(accessToken, {}).then((response) => {
-    const { CharacterID: characterID, CharacterName: characterName } =
+  console.info('retrieveCharInfo', accessToken);
+  return esiLoginVerify(accessToken, {}, {}, true).then((response) => {
+    const { CharacterID: characterId, CharacterName: characterName } =
       response.data;
+    console.info('Responded with', response.data);
     return {
       ...accessToken,
-      characterID,
+      characterId,
       characterName
     };
   });
 };
 
-const parseAuthToken = (result: any): AuthTokenInfo => {
+interface PartialAuthToken {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+}
+const parseAuthToken = (result: any): PartialAuthToken => {
   if (result.status === 200) {
+    console.info('Got token', result.data);
     const {
       access_token: accessToken,
       expires_in: expiresIn,
@@ -41,25 +50,29 @@ export const AddCharacter = (): ReactElement => {
   const params = new URLSearchParams(window.location.search);
 
   const code = params.get('code');
-  const codeVerifier = params.get('codeVerifier');
+  const { codeVerifier } = getChallenge();
+  resetChallenge();
 
   useEffect(() => {
+    const creds = getOuthCreds();
+    const { clientId } = creds;
     const params = new URLSearchParams();
     params.append('grant_type', 'authorization_code');
     params.append('code', code);
-    params.append('client_id', '6d9027a5346d42e1babfda3a8b34a1f1');
+    params.append('client_id', clientId);
     params.append('code_verifier', codeVerifier);
-    console.info(params);
+    console.info('Getting token', creds, params.toString());
 
     axios
       .post('https://login.eveonline.com/v2/oauth/token', params)
       .then(parseAuthToken)
       .then(retrieveCharacterInfo)
       .then((result) => {
-        setCharacter({ name: result.characterName, id: result.characterID });
+        console.info('Retrieved char info', result);
+        setCharacter({ name: result.characterName, id: result.characterId });
         const char = {
           name: result.characterName,
-          id: result.characterID,
+          id: result.characterId,
           wallet: 0,
           accessToken: result.accessToken,
           refreshToken: result.refreshToken,
@@ -67,7 +80,7 @@ export const AddCharacter = (): ReactElement => {
         };
 
         db.characters
-          .delete(String(result.characterID))
+          .delete(result.characterId)
           .catch(() => true) // just ignore deletion errors for now
           .then(() => {
             db.characters.add(char);

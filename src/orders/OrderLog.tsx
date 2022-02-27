@@ -19,15 +19,17 @@ import { useStationMap } from '../station-service';
 import { IOwnOrder } from './orders';
 import { IItemNotes } from '../items/ItemNotes';
 import moment from 'moment';
+import { SortModel } from '../pagination';
 
-type ItemSelectedCallback = (itemId: number) => void;
-type ItemListCallback = (itemId: number[]) => void;
+type ItemSelectedCallback = (item: IOwnOrder) => void;
+type ItemListCallback = (itemId: IOwnOrder[]) => void;
 
 export const OrderLog: React.FC<{
   character: IChar;
   onItemSelected: ItemSelectedCallback;
   onItemListChanged: ItemListCallback;
-}> = ({ character, onItemSelected, onItemListChanged }) => {
+  onSortModelChange: (sortModel: SortModel) => void;
+}> = ({ character, onItemSelected, onItemListChanged, onSortModelChange }) => {
   const stationMap = useStationMap();
 
   // TODO: (Refactor) extract to hook
@@ -42,10 +44,7 @@ export const OrderLog: React.FC<{
     [character]
   );
 
-  useEffect(
-    () => orders && onItemListChanged(orders.map((o) => o.typeId)),
-    [orders]
-  );
+  useEffect(() => orders && onItemListChanged(orders), [orders]);
 
   // TODO: (Refactor) extract to hook
   const noteMap = useLiveQuery(() =>
@@ -130,9 +129,10 @@ export const OrderLog: React.FC<{
 
   return (
     <DataGrid
+      onSortModelChange={onSortModelChange}
       rowHeight={30}
       disableColumnMenu={true}
-      onRowClick={(params) => onItemSelected(params.row.typeId)}
+      onRowClick={(params) => onItemSelected(params.row as IOwnOrder)}
       columns={columns}
       rows={orders}
       getRowId={(row) => row.orderId}

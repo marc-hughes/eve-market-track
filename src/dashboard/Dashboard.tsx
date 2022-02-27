@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Route, Switch, useHistory, useLocation } from 'react-router-dom';
 import { createStyles, Theme, makeStyles } from '@material-ui/core/styles';
 import Drawer from '@material-ui/core/Drawer';
@@ -25,7 +25,7 @@ import { TradeConfig } from '../config/TradeConfig';
 import { AuthContext } from '../auth';
 import { db } from '../data/db';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { AuthTokenInfo } from '../esi';
+import { AuthTokenInfo, esiServerStatus } from '../esi';
 import { DataSync } from '../DataSync';
 import { Import } from '../import/Import';
 import { FlaggedLog } from '../items/FlaggedLog';
@@ -66,19 +66,43 @@ export const Dashboard = (props: any) => {
   const classes = useStyles();
   const location = useLocation();
   const history = useHistory();
+  const [expired, setExpired] = useState(false);
+  const params = new URLSearchParams(window.location.search);
+
+  console.info('CODE:', location.search, params.get('code'));
+  useEffect(() => {
+    if (params.get('code')) {
+      console.info('Got code!');
+      history.push('/callback');
+    }
+  }, []);
 
   const auth: AuthTokenInfo = firstCharacter
     ? {
+        characterId: firstCharacter.id,
         accessToken: firstCharacter.accessToken,
         refreshToken: firstCharacter.refreshToken,
         expiresIn: firstCharacter.expires
       }
     : null;
 
+  useEffect(() => {
+    auth &&
+      esiServerStatus(auth).then((res) => {
+        setExpired(
+          new Date(res.data.start_time).getTime() >
+            new Date('2021-10-30').getTime()
+        );
+      });
+  }, [auth]);
+
   const goToRoute = (path: string) => () => {
     console.info('Going to', path);
     history.push(path);
   };
+
+  if (expired) return <div>App Expired, get a new version</div>;
+
   return (
     <AuthContext.Provider value={auth}>
       <div className={classes.root}>

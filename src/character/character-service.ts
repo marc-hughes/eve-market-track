@@ -4,7 +4,7 @@ import { AuthTokenInfo } from '../esi';
 import { IChar } from './IChar';
 
 export interface CharacterInfo {
-  characterID: number;
+  characterId: number;
   characterName: string;
 }
 

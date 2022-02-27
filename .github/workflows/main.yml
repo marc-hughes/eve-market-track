@@ -1,0 +1,105 @@
+name: Package and Release
+
+on:
+  push:
+    branches:
+      - release
+
+jobs:
+  build:
+    name: Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Use node 12.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('package-lock.json') }}
+          restore-keys: npm-
+      - name: npm install
+        run: npm ci
+      - name: Version
+        env:
+          ELECTRON_WEBPACK_APP_SHA: ${{github.sha}}
+        run: npm run set-ver
+      - name: Make Electron
+        env:
+          ELECTRON_WEBPACK_APP_SHA: ${{github.sha}}
+        run: npm run make
+      - name: Make Web
+        env:
+          ELECTRON_WEBPACK_APP_SHA: ${{github.sha}}
+        run: npm run build-web
+      - name: Sentry
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_IO }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          npm install @sentry/cli
+          ./node_modules/.bin/sentry-cli releases files "$Env:GITHUB_SHA" upload-sourcemaps out/eve-market-track-win32-x64/resources/app/.webpack/renderer/main_window/index.js.map
+      - name: Delete Sourcemap
+        run: npm run del-map
+      - name: Zip
+        uses: papeloto/action-zip@v1
+        with:
+          files: out/eve-market-track-win32-x64
+          recursive: true
+          dest: eve-market-track-win32-x64.zip
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: bin-file
+          path: eve-market-track-win32-x64.zip
+          retention-days: 1
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: dist
+          path: dist
+          retention-days: 1
+  upload-electron:
+    name: Upload
+    needs: Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+      - name: Download electron artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: bin-file
+      - name: Download web artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: dist
+          path: dist
+      - name: Pushes release to other repo
+        uses: dmnemec/copy_file_to_another_repo_action@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+        with:
+          source_file: 'eve-market-track-win32-x64.zip'
+          destination_repo: 'TrenzaloreStrax/market-tool'
+          destination_folder: 'builds'
+          user_email: 'trenzalore@wpidalamar.com'
+          user_name: 'Trenzalore'
+          commit_message: 'feat: Release Upload ${{github.sha}}'
+      - name: S3 Upload
+        uses: shallwefootball/s3-upload-action@master
+        with:
+          aws_key_id: ${{ secrets.AWS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
+          aws_bucket: ${{ secrets.AWS_BUCKET }}
+          source_dir: 'dist'
+          destination_dir: ''

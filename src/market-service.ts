@@ -35,11 +35,32 @@ const getOrders = (auth: IAuth, structureId: number, page = 1) => {
     });
 };
 
+const findAuthForStructure = async (structureId: number): Promise<IAuth> => {
+  const station = await db.stations.get(structureId);
+  if (station && station.founderId) {
+    // We know who "found" this station, so they should have access to it.
+    const user = await db.characters.get(station.founderId);
+    if (user) {
+      return {
+        ...user,
+        characterId: user.id
+      };
+    }
+  }
+
+  // If we don't find a specific user, just use the first one
+  const firstUser = await db.characters.toCollection().first();
+  return {
+    ...firstUser,
+    characterId: firstUser.id
+  };
+};
+
 export const updateMarket = async (
-  auth: IAuth,
   structureId: number,
   deleteOld = true
 ): Promise<any> => {
+  const auth = await findAuthForStructure(structureId);
   const first = await getOrders(auth, structureId);
   const otherOrders = await Promise.all(
     Array(first.pages - 1)

@@ -1,15 +1,14 @@
 import {
-  AppBar,
   Button,
   createStyles,
-  Drawer,
   Grid,
   makeStyles,
+  MenuItem,
   Paper,
+  Select,
   TextField,
   Toolbar,
-  Tooltip,
-  Typography
+  Tooltip
 } from '@material-ui/core';
 import {
   DataGrid,
@@ -27,13 +26,24 @@ import { getItem } from '../items/esi-static';
 import { ItemImage } from '../items/ItemImage';
 import { IItemNotes } from '../items/ItemNotes';
 import { useStationMap } from '../station-service';
-import { findDeals, FindDealsOptions } from './import-service';
+import { Deal, findDeals, FindDealsOptions } from './import-service';
 import styled from '@emotion/styled';
 import millify from 'millify';
 import { ItemDetails } from '../items/ItemDetails';
+import { usePagination } from '../pagination';
+import { FullDrawer } from '../FullDrawer';
+import {
+  getDefaultStrategy,
+  useStrategies
+} from '../strategy/strategy-service';
+import { ITradingStrategy } from '../strategy/ITradingStrategy';
 
 const useStyles = makeStyles(() =>
   createStyles({
+    inputGrid: {
+      paddingLeft: 10,
+      paddingTop: 16
+    },
     paper: {
       width: '100%',
       height: '100%',
@@ -65,10 +75,23 @@ export const Import: React.FC = () => {
   const routes = useLiveQuery(() => db.tradeRoute.toArray());
   const stationMap = useStationMap();
   const classes = useStyles();
-  const [focusedItemId, setFocusedItemId] = React.useState<number | null>(null);
   const [tradeRoute, setTradeRoute] = React.useState(null);
   const [processing, setProcessing] = React.useState(false);
-  const [deals, setDeals] = React.useState([]);
+  const [_strategy, setStrategy] = React.useState(null);
+
+  const {
+    currentIndex,
+    currentList,
+    setList,
+    setCurrentItem,
+    onSortModelChange,
+    count,
+    currentItem,
+    next,
+    previous
+  } = usePagination<Deal>([]);
+
+  const strategies = useStrategies();
 
   useEffect(() => {
     if (
@@ -98,24 +121,6 @@ export const Import: React.FC = () => {
     newValue: ITradeRoute | null
   ) => {
     setTradeRoute(newValue);
-  };
-
-  const onBroadCalc = () => {
-    setProcessing(true);
-    findDeals(auth, tradeRoute, stationMap)
-      .then(setDeals)
-      .then(() => setProcessing(false));
-  };
-
-  const calcForConfig = (config: FindDealsOptions) => () => {
-    // Trying to find deals that don't hit:
-    //   > 25% markup
-    //   < 50% stock
-    // Because those are the filters most goonmetrics people use
-    setProcessing(true);
-    findDeals(auth, tradeRoute, stationMap, config)
-      .then(setDeals)
-      .then(() => setProcessing(false));
   };
 
   const columns: GridColDef[] = [
@@ -191,13 +196,24 @@ export const Import: React.FC = () => {
     }
   ];
 
-  const nextItem = () => {
-    if (!focusedItemId || !deals) return;
-    const index = deals.findIndex((d) => d.itemId === focusedItemId);
-    const next = deals[index + 1].itemId;
-    if (next) {
-      setFocusedItemId(next);
-    }
+  if (!strategies) return null;
+
+  const strategy: ITradingStrategy =
+    _strategy || getDefaultStrategy(strategies);
+
+  const onCalc = () => {
+    setProcessing(true);
+    findDeals(auth, tradeRoute, stationMap, {
+      minProfit: strategy.importMinProfit,
+      minProfitPercent: strategy.importMinProfitPercent,
+      minDailyProfit: strategy.importMinDailyProfit,
+      maxProfitPercent: Number.MAX_SAFE_INTEGER,
+      minStockDays: 0,
+      maxStockDays: strategy.importMaxStockDays,
+      minDailyVolume: strategy.importMinDailyVolume
+    })
+      .then(setList)
+      .then(() => setProcessing(false));
   };
 
   return (
@@ -206,106 +222,54 @@ export const Import: React.FC = () => {
         <Grid container>
           <Grid item md={12}>
             <Toolbar>
-              <Autocomplete
-                disabled={processing}
-                options={routes}
-                value={tradeRoute}
-                onChange={onChange}
-                getOptionLabel={(option: ITradeRoute) =>
-                  stationMap[option.fromStation].name +
-                  ' ⏩🚚⏩ ' +
-                  stationMap[option.toStation].name
-                }
-                style={{ width: '100%' }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Trade Route"
-                    variant="standard"
+              <Grid container>
+                <Grid item md={6}>
+                  <Autocomplete
+                    disabled={processing}
+                    options={routes}
+                    value={tradeRoute}
+                    onChange={onChange}
+                    getOptionLabel={(option: ITradeRoute) =>
+                      stationMap[option.fromStation].name +
+                      ' ⏩🚚⏩ ' +
+                      stationMap[option.toStation].name
+                    }
+                    style={{ width: '100%' }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Trade Route"
+                        variant="standard"
+                      />
+                    )}
                   />
-                )}
-              />
-              <Tooltip title="Broad selection criteria to grab the widest variety of possible deals">
-                <Button
-                  disabled={processing}
-                  onClick={onBroadCalc}
-                  variant="outlined"
-                >
-                  Broad
-                </Button>
-              </Tooltip>
+                </Grid>
+                <Grid item md={6} className={classes.inputGrid}>
+                  <Select
+                    value={strategy.id}
+                    label="Import Strategy"
+                    onChange={(event) => {
+                      setStrategy(
+                        strategies.find((s) => s.id === event.target.value)
+                      );
+                    }}
+                  >
+                    {strategies.map((strategy) => (
+                      <MenuItem key={strategy.id} value={strategy.id}>
+                        {strategy.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
 
-              <Tooltip title="Narrow selection criteria to grab a smaller selection of the potentially best deals">
-                <Button
-                  disabled={processing}
-                  onClick={calcForConfig({
-                    minProfit: 1,
-                    minProfitPercent: 20,
-                    maxProfitPercent: Number.MAX_SAFE_INTEGER,
-                    minDailyProfit: 1000000,
-                    minStockDays: 0,
-                    maxStockDays: 4,
-                    minDailyVolume: 1
-                  })}
-                  variant="outlined"
-                >
-                  Narrow
-                </Button>
-              </Tooltip>
-
-              <Tooltip title="Items that are low on stock">
-                <Button
-                  disabled={processing}
-                  onClick={calcForConfig({
-                    minProfit: 1,
-                    minProfitPercent: 1,
-                    maxProfitPercent: Number.MAX_SAFE_INTEGER,
-                    minDailyProfit: 0,
-                    minStockDays: 0,
-                    maxStockDays: 1,
-                    minDailyVolume: 0
-                  })}
-                  variant="outlined"
-                >
-                  Stock
-                </Button>
-              </Tooltip>
-
-              <Tooltip title="Items with high (> 40%) margins">
-                <Button
-                  disabled={processing}
-                  onClick={calcForConfig({
-                    minProfit: 1,
-                    minProfitPercent: 40,
-                    maxProfitPercent: Number.MAX_SAFE_INTEGER,
-                    minDailyProfit: 0,
-                    minStockDays: 0,
-                    maxStockDays: Number.MAX_SAFE_INTEGER,
-                    minDailyVolume: 1
-                  })}
-                  variant="outlined"
-                >
-                  Margin
-                </Button>
-              </Tooltip>
-
-              <Tooltip title="Items that might be a good deal, and don't currently show up in the 2 main goonpraisal lists. Maybe these won't get goonrushed?">
-                <Button
-                  disabled={processing}
-                  onClick={calcForConfig({
-                    minProfit: 1,
-                    minProfitPercent: 5,
-                    maxProfitPercent: 24,
-                    minDailyProfit: 1,
-                    minStockDays: 4,
-                    maxStockDays: Number.MAX_SAFE_INTEGER,
-                    minDailyVolume: 1
-                  })}
-                  variant="outlined"
-                >
-                  Goonpraisal
-                </Button>
-              </Tooltip>
+                  <Button
+                    disabled={processing}
+                    onClick={onCalc}
+                    variant="outlined"
+                  >
+                    Find
+                  </Button>
+                </Grid>
+              </Grid>
             </Toolbar>
           </Grid>
         </Grid>
@@ -314,22 +278,26 @@ export const Import: React.FC = () => {
         {processing && <div>Processing trade route...</div>}
         {processing || (
           <DataGrid
+            onSortModelChange={onSortModelChange}
             rowHeight={30}
-            onRowClick={(params) => setFocusedItemId(params.row.itemId)}
+            onRowClick={(params) => setCurrentItem(params.row as Deal)}
             columns={columns}
-            rows={deals}
+            rows={currentList}
             disableColumnMenu={true}
             getRowId={(deal) => deal.itemId}
           />
         )}
       </GridContainer>
-      <Drawer
-        anchor="bottom"
-        open={!!focusedItemId}
-        onClose={() => setFocusedItemId(null)}
-      >
-        <ItemDetails itemId={focusedItemId} onNext={nextItem} showNext={true} />
-      </Drawer>
+      <FullDrawer open={!!currentItem} onClose={() => setCurrentItem(null)}>
+        <ItemDetails
+          maxPage={count}
+          currentPage={currentIndex + 1}
+          itemId={currentItem?.itemId}
+          onNext={next}
+          onPrevious={previous}
+          showNext={true}
+        />
+      </FullDrawer>
 
       {/* <Backdrop className={classes.backdrop} open={processing}>
         <Alert className={classes.infoBox} severity="info">

@@ -7,10 +7,11 @@ import { IOrders, IOwnOrder, IOwnOrderHistory } from '../orders/orders';
 import { IInventory } from '../inventory/inventory';
 import { IItemNotes } from '../items/ItemNotes';
 import { IItemStat } from '../items/itemstat';
+import { ITradingStrategy } from '../strategy/ITradingStrategy';
 
 class AppDB extends Dexie {
   itemStat: Dexie.Table<IItemStat, number>;
-  characters: Dexie.Table<IChar, string>;
+  characters: Dexie.Table<IChar, number>;
   tradeRoute: Dexie.Table<ITradeRoute, number>;
   stations: Dexie.Table<IStation, number>;
   walletTransactions: Dexie.Table<IWalletEntry, number>;
@@ -19,6 +20,7 @@ class AppDB extends Dexie {
   inventory: Dexie.Table<IInventory, number>;
   orderHistory: Dexie.Table<IOwnOrderHistory, number>;
   itemNotes: Dexie.Table<IItemNotes, number>;
+  strategies: Dexie.Table<ITradingStrategy, number>;
 
   constructor() {
     super('eve-market');
@@ -40,9 +42,22 @@ class AppDB extends Dexie {
       itemStat: '[itemId+regionId]'
     });
 
-    // The following line is needed if your typescript
-    // is compiled using babel instead of tsc:
-    //this.characters = this.table('characters');
+    this.version(3)
+      .stores({
+        stations: 'id,name,ownerId,solarSystemId,typeId,founderId'
+      })
+      .upgrade((tx) => {
+        tx.table('stations').clear();
+        // This will repopulate next data sync
+      });
+
+    this.version(4).stores({
+      strategies: '++id, name'
+    });
+
+    this.version(5).stores({
+      itemNotes: 'itemId,strategy'
+    });
   }
 }
 

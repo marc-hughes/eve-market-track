@@ -1,5 +1,4 @@
 import {
-  Avatar,
   Button,
   Card,
   createStyles,
@@ -13,7 +12,6 @@ import {
 import { useLiveQuery } from 'dexie-react-hooks';
 import Dexie from 'dexie';
 import React from 'react';
-import { IChar } from '../character/IChar';
 import { db } from '../data/db';
 import { getItem, IESIStatic } from './esi-static';
 
@@ -24,13 +22,12 @@ import { useStationMap } from '../station-service';
 
 import { IWalletEntry } from '../character/IWalletEntry';
 import { IStation } from '../config/IStation';
-import { ItemTradeRoute } from './ItemTradeRoute';
-import { esiOpenMarket } from '../esi';
-import { IOrders, IOwnOrder, useSells } from '../orders/orders';
+import { IOrders } from '../orders/orders';
 import { IInventory } from '../inventory/inventory';
 import { useCharacters } from '../character/character-service';
-import { ItemColorFlag } from './ItemColorFlag';
 import moment from 'moment';
+import { ItemDetailLeftColumn } from './ItemDetailLeftColumn';
+import { ActiveOrders } from './ActiveOrders';
 
 /*
     [img]
@@ -71,10 +68,6 @@ const useStyles = makeStyles(() =>
     detailCard: {
       marginBottom: 15,
       padding: 10
-    },
-    competition: {
-      fontSize: 10,
-      color: '#666'
     }
   })
 );
@@ -83,145 +76,44 @@ export const ItemDetails: React.FC<{
   itemId: number;
   showNext: boolean;
   onNext: () => void;
-}> = ({ itemId, onNext, showNext }) => {
+  onPrevious?: () => void;
+  currentPage?: number;
+  maxPage?: number;
+}> = ({
+  itemId,
+  onNext,
+  showNext,
+  onPrevious,
+  currentPage = null,
+  maxPage = null
+}) => {
   const classes = useStyles();
   const itemDef = getItem(itemId);
 
   if (!itemDef) return null;
+
   return (
-    <React.Fragment>
+    <Grid container className={classes.root}>
       {showNext && (
-        <Button className={classes.next} onClick={onNext}>
-          Next
-        </Button>
-      )}
-      <Grid container className={classes.root}>
-        <Grid item md={6}>
-          <LeftDetailCol itemDef={itemDef} itemId={itemId} />
-        </Grid>
-        <Grid item md={6}>
-          <RightDetailCol itemDef={itemDef} itemId={itemId} />
-        </Grid>
-      </Grid>
-    </React.Fragment>
-  );
-};
-
-const LeftDetailCol: React.FC<{
-  itemDef: IESIStatic;
-  itemId: number;
-}> = ({ itemDef, itemId }) => {
-  const tradeRoutes = useLiveQuery(() => db.tradeRoute.toArray(), []);
-  const characters = useCharacters();
-
-  const openItemWindow = (char: IChar) => {
-    esiOpenMarket(char, { type_id: String(itemId) }, {});
-  };
-
-  return (
-    <Grid container>
-      <Grid item md={2}>
-        <img src={`https://imageserver.eveonline.com/Type/${itemId}_64.png`} />
-      </Grid>
-      <Grid item md={10}>
-        <h2>
-          <Button
-            onClick={() => navigator.clipboard.writeText(itemDef.typeName)}
-          >
-            {itemDef.typeName}
-          </Button>
-          <Grid container>
-            <Grid item md={1}>
-              <ItemColorFlag itemId={itemId} />
-            </Grid>
-
-            {characters?.map((char) => (
-              <Grid key={String(char.id)} item md={1}>
-                <Avatar
-                  onClick={() => openItemWindow(char)}
-                  aria-label="recipe"
-                  alt={char.name}
-                  src={`https://image.eveonline.com/Character/${char.id}_64.jpg`}
-                />
-              </Grid>
-            ))}
+        <React.Fragment>
+          <Grid item md={8}>
+            <Button onClick={onPrevious}>Prev</Button>
+            {currentPage} / {maxPage}
+            <Button onClick={onNext}>Next</Button>
           </Grid>
-        </h2>
-        <ul>
-          <li>
-            Volume: {itemDef.volume} m3 ({itemDef.packagedVolume} m3 packaged)
-          </li>
-        </ul>
+        </React.Fragment>
+      )}
+      <Grid item md={6}>
+        <ItemDetailLeftColumn itemDef={itemDef} itemId={itemId} />
       </Grid>
-      {tradeRoutes?.map((route, i) => (
-        <ItemTradeRoute
-          key={i}
-          route={route}
-          itemId={itemId}
-          itemDef={itemDef}
-        />
-      ))}
+      <Grid item md={6}>
+        <RightDetailCol itemDef={itemDef} itemId={itemId} />
+      </Grid>
     </Grid>
   );
 };
 
-const ActiveOrder: React.FC<{ order: IOwnOrder }> = ({ order }) => {
-  const stationMap = useStationMap();
-  const otherOrders = useSells(order.typeId, order.locationId);
-  const classes = useStyles();
-
-  return (
-    <React.Fragment>
-      {otherOrders
-        ?.filter((other) => other.price > order.price)
-        .reverse()
-        .map((other) => {
-          return (
-            <TableRow>
-              <TableCell>&nbsp;</TableCell>
-              <TableCell className={classes.competition} align="right">
-                {millify(other.price, { precision: 4 })}
-              </TableCell>
-              <TableCell className={classes.competition}>
-                {millify(other.volumeRemain)}
-              </TableCell>
-            </TableRow>
-          );
-        })}
-
-      <TableRow key={order.orderId}>
-        <TableCell component="th" scope="row">
-          {stationMap[order.locationId]?.name}
-        </TableCell>
-        <TableCell align="right">
-          {(order.isBuyOrder ? '-' : '') +
-            millify(order.price, { precision: 3 })}
-        </TableCell>
-        <TableCell>
-          {millify(order.volumeRemain)}/{millify(order.volumeTotal)}
-        </TableCell>
-      </TableRow>
-
-      {otherOrders
-        ?.filter((other) => other.price < order.price)
-        .reverse()
-        .map((other) => {
-          return (
-            <TableRow>
-              <TableCell>&nbsp;</TableCell>
-              <TableCell className={classes.competition} align="right">
-                {millify(other.price, { precision: 4 })}
-              </TableCell>
-              <TableCell className={classes.competition}>
-                {millify(other.volumeRemain)}
-              </TableCell>
-            </TableRow>
-          );
-        })}
-    </React.Fragment>
-  );
-};
-
+// TODO: Refactor this to it's own file (maybe with RightDetailCol)
 const InventoryTable: React.FC<{
   inventory: IInventory[];
   stationMap: Record<string, IStation>;
@@ -251,6 +143,7 @@ const InventoryTable: React.FC<{
   );
 };
 
+// TODO: Refactor this to it's own file (maybe with RightDetailCol)
 const TransactionTable: React.FC<{
   transactions: IWalletEntry[];
   stationMap: Record<string, IStation>;
@@ -279,6 +172,7 @@ const TransactionTable: React.FC<{
   );
 };
 
+// TODO: Refactor this to it's own file (maybe with RightDetailCol)
 const OrdersTable: React.FC<{
   orders: IOrders[];
   stationMap: Record<string, IStation>;
@@ -309,6 +203,7 @@ const OrdersTable: React.FC<{
   );
 };
 
+// TODO: Refactor this to it's own file
 const RightDetailCol: React.FC<{
   itemDef: IESIStatic;
   itemId: number;
@@ -374,7 +269,7 @@ const RightDetailCol: React.FC<{
           <Table size="small">
             <TableBody>
               {activeOrders?.map((order) => (
-                <ActiveOrder key={order.orderId} order={order} />
+                <ActiveOrders key={order.orderId} order={order} />
               ))}
             </TableBody>
           </Table>

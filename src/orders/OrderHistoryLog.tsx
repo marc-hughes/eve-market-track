@@ -15,20 +15,27 @@ import { IChar } from '../character/IChar';
 import { db } from '../data/db';
 import { useStationMap } from '../station-service';
 import { IItemNotes } from '../items/ItemNotes';
+import { IOwnOrderHistory } from './orders';
+import { SortModel } from '../pagination';
 
-type ItemSelectedCallback = (itemId: number) => void;
-type ItemListCallback = (itemId: number[]) => void;
+type ItemSelectedCallback = (itemId: IOwnOrderHistory) => void;
+type ItemListCallback = (itemId: IOwnOrderHistory[]) => void;
 
 export const OrderHistoryLog: React.FC<{
   character: IChar;
   onItemSelected: ItemSelectedCallback;
   onItemListChanged: ItemListCallback;
-}> = ({ character, onItemSelected, onItemListChanged }) => {
+  onSortModelChange: (sortModel: SortModel) => void;
+}> = ({ character, onItemSelected, onItemListChanged, onSortModelChange }) => {
   const stationMap = useStationMap();
   const orders = useLiveQuery(
     () =>
       character &&
-      db.orderHistory.where({ characterId: character.id }).reverse().toArray(),
+      db.orderHistory
+        .where({ characterId: character.id })
+        .reverse()
+        .limit(10000)
+        .toArray(),
     [character]
   );
 
@@ -41,10 +48,7 @@ export const OrderHistoryLog: React.FC<{
     )
   );
 
-  useEffect(
-    () => orders && onItemListChanged(orders.map((o) => o.typeId)),
-    [orders]
-  );
+  useEffect(() => orders && onItemListChanged(orders), [orders]);
 
   if (!character || !orders) return null;
 
@@ -102,9 +106,10 @@ export const OrderHistoryLog: React.FC<{
 
   return (
     <DataGrid
+      onSortModelChange={onSortModelChange}
       rowHeight={30}
       disableColumnMenu={true}
-      onRowClick={(params) => onItemSelected(params.row.typeId)}
+      onRowClick={(params) => onItemSelected(params.row as IOwnOrderHistory)}
       columns={columns}
       rows={orders}
       getRowId={(row) => row.orderId}

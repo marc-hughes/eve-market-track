@@ -26,6 +26,8 @@ import { getItem } from '../items/esi-static';
 import { ItemImage } from '../items/ItemImage';
 import { useAuth } from '../auth';
 import { ItemDetails } from '../items/ItemDetails';
+import { usePagination } from '../pagination';
+import { FullDrawer } from '../FullDrawer';
 
 // TODO: (Refactor) Get rid of emotion/styled and use only @material-ui styles
 const PageContainer = styled.div({
@@ -57,25 +59,32 @@ const useStyles = makeStyles(() =>
 export const Suggestions: React.FC = () => {
   const classes = useStyles();
   const auth = useAuth();
-  const [focusedItemId, setFocusedItemId] = React.useState<number | null>(null);
-  const [suggestions, setSuggestions] = React.useState<Suggestion[]>([]);
-
-  const onNext = () => {
-    const index = suggestions.findIndex((s) => s.itemId === focusedItemId);
-
-    if (index > -1) {
-      setFocusedItemId(suggestions[index + 1].itemId);
-    }
-  };
+  const {
+    currentIndex,
+    currentList,
+    setList,
+    setCurrentItem,
+    onSortModelChange,
+    count,
+    currentItem,
+    next,
+    previous
+  } = usePagination<Suggestion>([]);
 
   const generateRelistSuggestions = () => {
-    getRelistSuggestions(auth).then(setSuggestions);
+    getRelistSuggestions(auth).then((l) => {
+      setList(l);
+    });
   };
   const generateCancelSuggestions = () => {
-    getCancelSuggestions(auth).then(setSuggestions);
+    getCancelSuggestions(auth).then((l) => {
+      setList(l);
+    });
   };
   const generateListSuggestions = () => {
-    getListSuggestions(auth).then(setSuggestions);
+    getListSuggestions(auth).then((l) => {
+      setList(l);
+    });
   };
 
   const columns: GridColDef[] = [
@@ -131,21 +140,25 @@ export const Suggestions: React.FC = () => {
       </AppBar>
       <Paper square className={classes.paper}>
         <DataGrid
+          onSortModelChange={onSortModelChange}
           rowHeight={30}
           disableColumnMenu={true}
-          onRowClick={(params) => setFocusedItemId(params.row.itemId)}
+          onRowClick={(params) => setCurrentItem(params.row as Suggestion)}
           columns={columns}
-          rows={suggestions}
+          rows={currentList}
           getRowId={(row) => row.suggestionId}
         />
       </Paper>
-      <Drawer
-        anchor="bottom"
-        open={!!focusedItemId}
-        onClose={() => setFocusedItemId(null)}
-      >
-        <ItemDetails itemId={focusedItemId} onNext={onNext} showNext={true} />
-      </Drawer>
+      <FullDrawer open={!!currentItem} onClose={() => setCurrentItem(null)}>
+        <ItemDetails
+          itemId={currentItem?.itemId}
+          onNext={next}
+          onPrevious={previous}
+          showNext={true}
+          currentPage={currentIndex + 1}
+          maxPage={count}
+        />
+      </FullDrawer>
     </PageContainer>
   );
 };

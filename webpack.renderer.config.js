@@ -12,6 +12,10 @@ module.exports = {
   },
   plugins: plugins,
   resolve: {
-    extensions: ['.js', '.ts', '.jsx', '.tsx', '.css']
+    extensions: ['.js', '.ts', '.jsx', '.tsx', '.css'],
+    alias: {
+      "crypto": require.resolve('crypto-browserify'),
+      "stream": require.resolve("stream-browserify")
+    }
   },
 };

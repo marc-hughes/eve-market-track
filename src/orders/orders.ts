@@ -68,11 +68,7 @@ export const getSells = (
 };
 
 export const useSells = (itemId: number, locationId: number) => {
-  return useLiveQuery(
-    () => getSells(itemId, locationId),
-
-    [itemId, locationId]
-  );
+  return useLiveQuery(() => getSells(itemId, locationId), [itemId, locationId]);
 };
 
 export const useMyLastBuy = (itemId: number): IWalletEntry => {

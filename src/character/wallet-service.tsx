@@ -1,6 +1,6 @@
 import { validateStations } from '../station-service';
 import { db } from '../data/db';
-import { esiWalletTransactions } from '../esi';
+import { esiWalletTransactions, walletBallance } from '../esi';
 import { IChar } from './IChar';
 import { IWalletEntry } from './IWalletEntry';
 
@@ -27,10 +27,22 @@ export const refreshWallet = (character: IChar): Promise<boolean> => {
     return Promise.all([
       db.walletTransactions.bulkPut(transactions),
       validateStations(
-        character,
+        {
+          ...character,
+          characterId: character.id
+        },
         transactions.map<number>((t: IWalletEntry) => t.locationId)
       )
-    ]).then(() => true);
+    ])
+      .then(() =>
+        walletBallance(character, {}, { characterId: String(character.id) })
+      )
+      .then((bal) => {
+        return db.characters.update(character.id, {
+          wallet: bal.data
+        });
+      })
+      .then(() => true);
     // TODO: Error handling
   });
 };

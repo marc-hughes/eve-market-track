@@ -15,6 +15,7 @@ import { useAuth } from '../auth';
 import { updateMarket } from '../market-service';
 import { Alert } from '@material-ui/lab';
 import { db } from '../data/db';
+import { TradeRouteAdd } from './TradeRouteAdd';
 
 const useStyles = makeStyles({
   table: {
@@ -45,7 +46,13 @@ export const TradeRouteList: React.FC = (props) => {
 
   return (
     <React.Fragment>
-      <TableContainer component={Paper}>
+      <h1>Trade Routes</h1>
+      <Alert severity="info">
+        This is where you configure where you are going to import from 👉 to.
+        You'll only see stations that you've traded at, so if the one you want
+        is missing, go buy something and refresh that character's transactions.
+      </Alert>
+      <Paper>
         <Table className={classes.table} aria-label="simple table">
           <TableHead>
             <TableRow>
@@ -82,7 +89,8 @@ export const TradeRouteList: React.FC = (props) => {
             ))}
           </TableBody>
         </Table>
-      </TableContainer>
+        <TradeRouteAdd />
+      </Paper>
     </React.Fragment>
   );
 };

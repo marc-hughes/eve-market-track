@@ -17,13 +17,15 @@ import React from 'react';
 import { useAuth } from '../auth';
 import { ITradeRoute } from '../config/ITradeRoute';
 import { db } from '../data/db';
+import { IgnoreError } from '../IgnoreError';
 import { IOrders, useBestSell, useMyLastBuy, useSells } from '../orders/orders';
 import { getRegionId } from '../region';
 import { useStationMap } from '../station-service';
 import { IESIStatic } from './esi-static';
 import { useItemStats } from './itemstat';
 import { PriceHistoryChart } from './PriceHistoryChart';
-// import { OrderChart } from './OrderChart';
+import { getPrice } from './profit-calc';
+import { ProfitLoss } from './ProfitLoss';
 
 const PriceDetailDisplay: React.FC<{
   buyPrice: number;
@@ -101,27 +103,20 @@ export const ItemTradeRoute: React.FC<{
       0
     ) || 0;
 
-  // TODO: (Refactor) use the profit-calc functions
-  const plus20 = Math.round(
-    (1.2 * buyPrice + 1.2 * shipping) /
-      (1 - (1.2 * route.tax) / 100 - (1.2 * route.broker) / 100)
-  );
+  const plus20 = getPrice(buyPrice, 1.2, itemId, route);
 
-  const lastBuyPlus20 = Math.round(
-    (1.2 * (lastBuy?.unitPrice || 0) + 1.2 * shipping) /
-      (1 - (1.2 * route.tax) / 100 - (1.2 * route.broker) / 100)
-  );
+  const lastBuyPlus20 = getPrice(lastBuy?.unitPrice || 0, 1.2, itemId, route);
 
-  const breakEven = Math.ceil(
-    (buyPrice + shipping) / (1 - route.tax / 100 - route.broker / 100)
-  );
+  const breakEven = getPrice(buyPrice, 1, itemId, route);
+
+  const lastBuyBreakEven = getPrice(lastBuy?.unitPrice || 0, 1, itemId, route);
 
   if (!route) return null;
 
   return (
     <Card className={classes.routeCard}>
       <Grid container>
-        <Grid item md={12}>
+        <Grid item md={11}>
           {stationMap[route.fromStation]?.name} (
           <b>{buyPrice === 0 ? 'Not Found' : millify(buyPrice)})</b>
           <br />
@@ -187,6 +182,14 @@ export const ItemTradeRoute: React.FC<{
                     shipping={shipping}
                     route={route}
                   />
+
+                  <PriceDetailDisplay
+                    description="Last Buy Break Even"
+                    buyPrice={lastBuy.unitPrice}
+                    sellPrice={lastBuyBreakEven}
+                    shipping={shipping}
+                    route={route}
+                  />
                 </React.Fragment>
               )}
             </TableBody>
@@ -194,6 +197,7 @@ export const ItemTradeRoute: React.FC<{
         </Grid>
       </Grid>
 
+      <h2>Market Activity</h2>
       <PriceHistoryChart
         label={stationMap[route.fromStation]?.name}
         itemId={itemId}
@@ -204,6 +208,10 @@ export const ItemTradeRoute: React.FC<{
         itemId={itemId}
         locationId={route.toStation}
       />
+
+      <IgnoreError>
+        <ProfitLoss itemDef={itemDef} route={route} itemId={itemId} />
+      </IgnoreError>
 
       {/* This was meant to show the buy/sell spread, but
           it was just too hard to read.

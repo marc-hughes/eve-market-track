@@ -22,7 +22,7 @@ const marketGroups: MarketGroup[] = marketGroupsData;
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const asyncBatch = require('async-batch').default;
 
-interface Deal {
+export interface Deal {
   itemId: number;
   buy: number;
   sell: number;

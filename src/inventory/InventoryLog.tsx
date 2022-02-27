@@ -19,6 +19,8 @@ import { IStation } from '../config/IStation';
 import { StationInput } from '../config/StationSelect';
 import { makeStyles } from '@material-ui/core';
 import { IItemNotes } from '../items/ItemNotes';
+import { IInventory } from './inventory';
+import { SortModel } from '../pagination';
 
 const useStyle = makeStyles({
   stationSelect: {
@@ -27,14 +29,15 @@ const useStyle = makeStyles({
   }
 });
 
-type ItemSelectedCallback = (itemId: number) => void;
-type ItemListCallback = (itemId: number[]) => void;
+type ItemSelectedCallback = (itemId: IInventory) => void;
+type ItemListCallback = (items: IInventory[]) => void;
 
 export const InventoryLog: React.FC<{
   character: IChar;
   onItemSelected: ItemSelectedCallback;
   onItemListChanged: ItemListCallback;
-}> = ({ character, onItemSelected, onItemListChanged }) => {
+  onSortModelChange: (sortModel: SortModel) => void;
+}> = ({ character, onItemSelected, onItemListChanged, onSortModelChange }) => {
   const stationMap = useStationMap();
   const stations = useStations();
   const [station, setStation] = useState(null);
@@ -82,11 +85,7 @@ export const InventoryLog: React.FC<{
   useEffect(() => {
     onItemListChanged &&
       inventory &&
-      onItemListChanged(
-        inventory
-          .filter((i) => i.locationId === station?.id)
-          .map((i) => i.typeId)
-      );
+      onItemListChanged(inventory.filter((i) => i.locationId === station?.id));
   }, [inventory, station]);
 
   if (!character || !inventory || !stations) return null;
@@ -131,9 +130,10 @@ export const InventoryLog: React.FC<{
   return (
     <React.Fragment>
       <DataGrid
+        onSortModelChange={onSortModelChange}
         rowHeight={30}
         disableColumnMenu={true}
-        onRowClick={(params) => onItemSelected(params.row.typeId)}
+        onRowClick={(params) => onItemSelected(params.row as IInventory)}
         columns={columns}
         rows={inventory.filter((i) => i.locationId === station?.id)}
         getRowId={(row) => row.itemId}
